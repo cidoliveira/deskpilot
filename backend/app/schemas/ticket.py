@@ -70,3 +70,9 @@ class TicketStatusUpdate(BaseModel):
 
     status: TicketStatus
     resolution: Resolution | None = None
+
+
+class TicketAssigneeUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    assignee_id: int

@@ -4,6 +4,7 @@ from app.api.deps import CurrentUser, DbSession, Pagination
 from app.schemas.common import Page
 from app.schemas.history import TicketEventRead
 from app.schemas.ticket import (
+    TicketAssigneeUpdate,
     TicketCreate,
     TicketRead,
     TicketStatusUpdate,
@@ -68,4 +69,14 @@ def change_status(
     Invalid transition: 409. Wrong actor: 403. Missing assignee or resolution: 422.
     """
     ticket = ticket_workflow_service.change_status(db, ticket_id, data, current_user)
+    return TicketRead.model_validate(ticket)
+
+
+@router.put("/{ticket_id}/assignee", response_model=TicketRead)
+def assign_ticket(
+    ticket_id: int, data: TicketAssigneeUpdate, db: DbSession, current_user: CurrentUser
+) -> TicketRead:
+    """Admins assign any active technician; technicians claim unassigned tickets
+    (send their own id). Concurrent claims are serialized with a row lock."""
+    ticket = ticket_workflow_service.assign(db, ticket_id, data, current_user)
     return TicketRead.model_validate(ticket)

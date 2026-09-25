@@ -8,11 +8,12 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import BusinessRuleError
-from app.models import Ticket, TicketStatus, User
-from app.schemas.ticket import TicketStatusUpdate
+from app.core.exceptions import BusinessRuleError, ConflictError, PermissionDeniedError
+from app.models import Ticket, TicketAction, TicketStatus, User, UserRole
+from app.schemas.ticket import TicketAssigneeUpdate, TicketStatusUpdate
 from app.services import history_service, workflow
-from app.services.ticket_service import get_ticket, lock_ticket
+from app.services.ticket_policy import can_be_assigned
+from app.services.ticket_service import ensure_not_terminal, get_ticket, lock_ticket
 
 
 def change_status(session: Session, ticket_id: int, data: TicketStatusUpdate, user: User) -> Ticket:
@@ -45,4 +46,38 @@ def change_status(session: Session, ticket_id: int, data: TicketStatusUpdate, us
     )
     ticket.status = target
     session.commit()
+    return get_ticket(session, ticket.id, user)
+
+
+def assign(session: Session, ticket_id: int, data: TicketAssigneeUpdate, user: User) -> Ticket:
+    """Admins assign any technician; a technician can only claim an unassigned ticket."""
+    if user.role == UserRole.USER:
+        raise PermissionDeniedError("Only staff can assign tickets", error="assignment_forbidden")
+
+    ticket = lock_ticket(session, ticket_id, user)
+    ensure_not_terminal(ticket)
+
+    assignee = session.get(User, data.assignee_id)
+    if assignee is None or not can_be_assigned(assignee):
+        raise BusinessRuleError(
+            "The assignee must be an active technician or admin", error="invalid_assignee"
+        )
+
+    if user.role == UserRole.TECHNICIAN:
+        if assignee.id != user.id:
+            raise PermissionDeniedError(
+                "Technicians can only assign tickets to themselves", error="assignment_forbidden"
+            )
+        if ticket.assigned_to_id not in (None, user.id):
+            raise ConflictError(
+                "Ticket is already assigned to another technician",
+                error="ticket_already_assigned",
+            )
+
+    if ticket.assigned_to_id != assignee.id:
+        history_service.record(
+            session, ticket, TicketAction.ASSIGNED, user, old=ticket.assigned_to_id, new=assignee.id
+        )
+        ticket.assigned_to = assignee
+    session.commit()  # also releases the row lock when nothing changed
     return get_ticket(session, ticket.id, user)
