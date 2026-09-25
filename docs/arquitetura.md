@@ -98,7 +98,11 @@ testada com testes unitários sem banco.
 | Comentar | próprios, exceto CLOSED | visíveis, exceto CLOSED | ✔, exceto CLOSED |
 | Usuários, categorias, métricas | ✘ | ✘ | ✔ |
 
+- A visibilidade tem **uma única definição**, `ticket_policy.visible_to(user)`, um filtro SQL
+  usado pela listagem, pelo detalhe e por toda ação sobre um ticket.
 - Ticket que existe mas não é visível ao usuário retorna **404, não 403** (não revela existência).
+- Ticket visível mas sem permissão para a ação retorna **403** (ex.: técnico editando um
+  ticket disponível que ainda não assumiu).
 - Atribuição concorrente usa `SELECT ... FOR UPDATE`; o segundo técnico recebe `409`.
 
 ### SLA

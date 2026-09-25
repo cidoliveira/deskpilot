@@ -25,8 +25,9 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Estrutura da API, Docker Compose, PostgreSQL, migrations (Alembic), tratamento de erros padronizado |
 | ✅ | Autenticação JWT, senhas com Argon2 e controle de acesso por role (USER, TECHNICIAN, ADMIN) |
 | ✅ | Gestão de usuários pelo administrador, com paginação e filtros |
-| ⏳ | Tickets com máquina de estados e regras de visibilidade |
-| ⏳ | Atribuição, prioridade e histórico auditável |
+| ✅ | Categorias gerenciáveis pelo admin (7 categorias padrão criadas por migration) |
+| ✅ | Abertura, listagem paginada, detalhe e edição de tickets com visibilidade por role |
+| ⏳ | Máquina de estados, atribuição, prioridade e histórico auditável |
 | ⏳ | Comentários |
 | ⏳ | SLA por prioridade, filtros, busca, paginação e ordenação |
 | ⏳ | Dashboard de métricas |
@@ -153,7 +154,7 @@ Todos os erros seguem o mesmo formato:
 
 - [x] **Etapa 1:** FastAPI, Docker, PostgreSQL, SQLAlchemy, Alembic, tratamento de erros
 - [x] **Etapa 2:** usuários, autenticação JWT, roles
-- [ ] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
+- [x] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
 - [ ] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
 - [ ] **Etapa 5:** comentários
 - [ ] **Etapa 6:** SLA, filtros, busca e ordenação
