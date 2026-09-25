@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession, Pagination
+from app.api.ticket_params import TicketFilterParams
 from app.models import Ticket, User
 from app.schemas.common import Page
 from app.schemas.history import TicketEventRead
@@ -36,13 +37,16 @@ def create_ticket(data: TicketCreate, db: DbSession, current_user: CurrentUser) 
 
 @router.get("", response_model=Page[TicketSummary])
 def list_tickets(
-    db: DbSession, current_user: CurrentUser, pagination: Pagination
+    db: DbSession,
+    current_user: CurrentUser,
+    pagination: Pagination,
+    filters: TicketFilterParams,
 ) -> Page[TicketSummary]:
     """Tickets visible to the current user, newest first.
 
     USER: own tickets. TECHNICIAN: available + assigned + own. ADMIN: all.
     """
-    result = ticket_service.list_tickets(db, current_user, pagination)
+    result = ticket_service.list_tickets(db, current_user, filters, pagination)
     return Page[TicketSummary].model_validate(result)
 
 

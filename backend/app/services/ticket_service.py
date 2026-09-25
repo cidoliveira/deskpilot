@@ -12,7 +12,8 @@ from app.core.exceptions import (
 from app.db.pagination import PageParams, PageResult, paginate
 from app.models import TERMINAL_STATUSES, Ticket, TicketAction, User
 from app.schemas.ticket import TicketCreate, TicketUpdate
-from app.services import category_service, history_service, sla
+from app.schemas.ticket_filters import TicketFilters
+from app.services import category_service, history_service, sla, ticket_queries
 from app.services.ticket_policy import can_edit, visible_to
 
 # Load the related rows used by the response schemas in a fixed number of queries
@@ -80,13 +81,13 @@ def ensure_not_terminal(ticket: Ticket) -> None:
         raise ConflictError(f"{ticket.status} tickets cannot be changed", error="ticket_closed")
 
 
-def list_tickets(session: Session, user: User, params: PageParams) -> PageResult[Ticket]:
-    stmt = (
-        select(Ticket)
-        .where(visible_to(user))
-        .order_by(Ticket.created_at.desc(), Ticket.id.desc())
-        .options(*_RELATIONS)
-    )
+def list_tickets(
+    session: Session, user: User, filters: TicketFilters, params: PageParams
+) -> PageResult[Ticket]:
+    # Visibility first, filters on top: filters can only narrow what the user may see.
+    stmt = select(Ticket).where(visible_to(user)).options(*_RELATIONS)
+    stmt = ticket_queries.apply_filters(stmt, filters, user)
+    stmt = stmt.order_by(Ticket.created_at.desc(), Ticket.id.desc())
     return paginate(session, stmt, params)
 
 
