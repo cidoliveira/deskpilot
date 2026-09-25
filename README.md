@@ -27,7 +27,9 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Gestão de usuários pelo administrador, com paginação e filtros |
 | ✅ | Categorias gerenciáveis pelo admin (7 categorias padrão criadas por migration) |
 | ✅ | Abertura, listagem paginada, detalhe e edição de tickets com visibilidade por role |
-| ⏳ | Máquina de estados, atribuição, prioridade e histórico auditável |
+| ✅ | Máquina de estados de status, atribuição (com trava de concorrência), prioridade |
+| ✅ | Histórico auditável de todas as mudanças, gravado na mesma transação |
+| ✅ | `allowed_actions`: a API informa ao frontend o que o usuário pode fazer em cada ticket |
 | ⏳ | Comentários |
 | ⏳ | SLA por prioridade, filtros, busca, paginação e ordenação |
 | ⏳ | Dashboard de métricas |
@@ -155,7 +157,7 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 1:** FastAPI, Docker, PostgreSQL, SQLAlchemy, Alembic, tratamento de erros
 - [x] **Etapa 2:** usuários, autenticação JWT, roles
 - [x] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
-- [ ] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
+- [x] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
 - [ ] **Etapa 5:** comentários
 - [ ] **Etapa 6:** SLA, filtros, busca e ordenação
 - [ ] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)

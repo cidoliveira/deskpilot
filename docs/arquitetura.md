@@ -86,6 +86,30 @@ Append-only. Gravado pelo service **na mesma transação** da mudança.
 CLOSED e CANCELLED são terminais. A tabela de transições é **dado** (`services/workflow.py`),
 testada com testes unitários sem banco.
 
+`check_transition()` diferencia três erros, nesta ordem:
+
+| Situação | HTTP | `error` |
+|---|---|---|
+| Transição não existe na tabela (ex.: CLOSED → IN_PROGRESS) | 409 | `invalid_status_transition` |
+| Transição existe, mas o usuário não é um ator permitido | 403 | `status_change_forbidden` |
+| Falta técnico para IN_PROGRESS / WAITING_USER / RESOLVED | 422 | `ticket_not_assigned` |
+| Resolver sem `resolution` | 422 | `resolution_required` |
+
+Outras decisões do workflow:
+
+- **Atribuir não muda o status.** Assumir o chamado e começar a trabalhar são ações separadas
+  e explícitas; ambas ficam no histórico.
+- **Reabrir** (RESOLVED → IN_PROGRESS) limpa `resolved_at`, mas mantém o texto da resolução
+  anterior até a próxima resolução substituí-lo.
+- **Concorrência:** toda mudança carrega o ticket com `SELECT ... FOR UPDATE`. Se dois técnicos
+  tentam assumir o mesmo ticket ao mesmo tempo, o segundo espera o primeiro terminar, vê o
+  ticket já atribuído e recebe `409 ticket_already_assigned` em vez de sobrescrever.
+- **Atomicidade:** `history_service.record()` só adiciona o evento à sessão; o commit é feito
+  junto com a mudança. Ou os dois são gravados, ou nenhum.
+- **`allowed_actions`:** toda resposta de ticket individual traz `can_edit`, `can_claim`,
+  `can_assign`, `can_change_priority` e `allowed_transitions`, calculados pela mesma política
+  que valida as ações. O frontend só desenha os botões.
+
 ### Permissões
 
 | Ação | USER | TECHNICIAN | ADMIN |
