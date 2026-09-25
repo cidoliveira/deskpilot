@@ -71,6 +71,19 @@ def test_register_rejects_short_password_and_invalid_email(client: TestClient) -
     assert fields == {"email", "password"}
 
 
+def test_register_rejects_email_longer_than_rfc_limit(client: TestClient) -> None:
+    # email-validator enforces the 254-char RFC limit, so the value never reaches the
+    # VARCHAR(255) column (which would otherwise surface as a 500).
+    too_long = "a" * 60 + "@" + ".".join(["b" * 62] * 4) + ".com"
+
+    response = client.post(
+        REGISTER_URL, json={"name": "Ana", "email": too_long, "password": "Str0ng-password"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["details"][0]["field"] == "email"
+
+
 # --- login ------------------------------------------------------------------
 
 
