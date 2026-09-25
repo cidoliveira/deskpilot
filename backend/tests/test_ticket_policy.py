@@ -29,6 +29,15 @@ def test_author_edits_only_while_open(status: TicketStatus, expected: bool) -> N
     assert can_edit(_user(AUTHOR, UserRole.USER), _ticket(status, TECH)) is expected
 
 
+@pytest.mark.parametrize("role", [UserRole.TECHNICIAN, UserRole.USER])
+def test_author_rule_applies_to_any_non_admin_role(role: UserRole) -> None:
+    # A technician who opened a ticket (and is not assigned to it) is just an author.
+    in_progress = _ticket(TicketStatus.IN_PROGRESS, assigned_to_id=OTHER_TECH)
+
+    assert not can_edit(_user(AUTHOR, role), in_progress)
+    assert can_edit(_user(AUTHOR, role), _ticket(TicketStatus.OPEN))
+
+
 def test_assigned_technician_can_edit() -> None:
     ticket = _ticket(TicketStatus.IN_PROGRESS, assigned_to_id=TECH)
 

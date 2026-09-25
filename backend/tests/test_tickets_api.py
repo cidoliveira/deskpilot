@@ -138,6 +138,18 @@ def test_user_cannot_view_ticket_of_another_user(
     assert response.json()["error"] == "ticket_not_found"
 
 
+def test_user_cannot_view_ticket_of_another_user_assigned_to_technician(
+    client: TestClient, db_session: Session, user: User, other_user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session, created_by=other_user, assigned_to=tech, status=TicketStatus.IN_PROGRESS
+    )
+
+    response = client.get(f"{TICKETS_URL}/{ticket.id}", headers=auth_headers(user))
+
+    assert response.status_code == 404
+
+
 def test_user_views_own_ticket(client: TestClient, db_session: Session, user: User) -> None:
     ticket = make_ticket(db_session, created_by=user)
 
