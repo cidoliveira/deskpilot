@@ -32,7 +32,7 @@ services:
     # Development setup: source mounted + auto-reload. See README for the production notes.
     volumes:
       - ./backend:/app
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "alembic upgrade head && python -m app.scripts.create_admin && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   pgdata:
