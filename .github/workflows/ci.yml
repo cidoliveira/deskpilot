@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, migrations, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: deskpilot
+          POSTGRES_PASSWORD: deskpilot
+          POSTGRES_DB: deskpilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U deskpilot"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    # Throwaway values for a disposable CI database: not real secrets.
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: deskpilot
+      POSTGRES_PASSWORD: deskpilot
+      POSTGRES_DB: deskpilot
+      POSTGRES_TEST_DB: deskpilot_test
+      JWT_SECRET_KEY: ci-only-signing-key-not-used-anywhere-else
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.10.4"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Migrations (upgrade, models in sync, downgrade, upgrade)
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+      - name: Tests
+        run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
