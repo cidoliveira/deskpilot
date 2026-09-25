@@ -25,3 +25,16 @@ def visible_to(user: User) -> ColumnElement[bool]:
         available = and_(Ticket.assigned_to_id.is_(None), Ticket.status == TicketStatus.OPEN)
         return or_(own, available, Ticket.assigned_to_id == user.id)
     return own
+
+
+def can_edit(user: User, ticket: Ticket) -> bool:
+    """Whether `user` may edit title, description and category.
+
+    Terminal tickets (CLOSED/CANCELLED) are rejected before this check, for everyone.
+    - ADMIN: any ticket
+    - assigned technician: their tickets
+    - author: only while the ticket is still OPEN (nobody is working on it yet)
+    """
+    if user.role == UserRole.ADMIN or ticket.assigned_to_id == user.id:
+        return True
+    return ticket.created_by_id == user.id and ticket.status == TicketStatus.OPEN
