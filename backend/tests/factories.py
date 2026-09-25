@@ -5,7 +5,7 @@ from itertools import count
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password
-from app.models import Category, User, UserRole
+from app.models import Category, Ticket, TicketPriority, TicketStatus, User, UserRole
 
 DEFAULT_PASSWORD = "Str0ng-password"
 # Hashing is intentionally slow (Argon2); hash the default password only once.
@@ -43,6 +43,33 @@ def make_category(session: Session, *, name: str | None = None, is_active: bool 
     session.add(category)
     session.flush()
     return category
+
+
+def make_ticket(
+    session: Session,
+    *,
+    created_by: User,
+    category: Category | None = None,
+    title: str | None = None,
+    description: str = "Something is not working as expected.",
+    priority: TicketPriority = TicketPriority.MEDIUM,
+    status: TicketStatus = TicketStatus.OPEN,
+    assigned_to: User | None = None,
+    resolution: str | None = None,
+) -> Ticket:
+    ticket = Ticket(
+        title=title or f"Ticket {next(_sequence)}",
+        description=description,
+        category=category or make_category(session),
+        priority=priority,
+        status=status,
+        created_by=created_by,
+        assigned_to=assigned_to,
+        resolution=resolution,
+    )
+    session.add(ticket)
+    session.flush()
+    return ticket
 
 
 def auth_headers(user: User) -> dict[str, str]:
