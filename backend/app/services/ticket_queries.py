@@ -31,7 +31,8 @@ SORT_PATTERN = rf"^-?({'|'.join(SORT_FIELDS)})$"
 DEFAULT_SORT = "-created_at"
 
 
-def _start_of_day(day: date) -> datetime:
+def start_of_day(day: date) -> datetime:
+    """Midnight UTC of `day` (date filters are interpreted in UTC)."""
     return datetime.combine(day, time.min, tzinfo=UTC)
 
 
@@ -69,10 +70,10 @@ def apply_filters(stmt: Select, filters: TicketFilters, user: User, now: datetim
     if filters.sla_status is not None:
         stmt = stmt.where(sla.sla_status_condition(filters.sla_status, now))
     if filters.created_from is not None:
-        stmt = stmt.where(Ticket.created_at >= _start_of_day(filters.created_from))
+        stmt = stmt.where(Ticket.created_at >= start_of_day(filters.created_from))
     if filters.created_to is not None:
         # Inclusive end date: everything before the start of the next day.
-        stmt = stmt.where(Ticket.created_at < _start_of_day(filters.created_to + timedelta(days=1)))
+        stmt = stmt.where(Ticket.created_at < start_of_day(filters.created_to + timedelta(days=1)))
     return stmt
 
 
