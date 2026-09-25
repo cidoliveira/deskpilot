@@ -117,6 +117,49 @@ def test_message_is_validated(
     assert response.status_code == 422
 
 
+def test_author_answer_resumes_ticket_waiting_for_user(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session, created_by=user, assigned_to=tech, status=TicketStatus.WAITING_USER
+    )
+
+    _comment(client, ticket.id, user, "Here is the screenshot you asked for.")
+
+    detail = client.get(f"{TICKETS_URL}/{ticket.id}", headers=auth_headers(user)).json()
+    history = client.get(f"{TICKETS_URL}/{ticket.id}/history", headers=auth_headers(user)).json()
+    assert detail["status"] == "IN_PROGRESS"
+    assert [
+        (e["action"], e["old_value"], e["new_value"], e["changed_by"]["id"]) for e in history
+    ] == [("STATUS_CHANGED", "WAITING_USER", "IN_PROGRESS", user.id)]
+
+
+def test_technician_comment_keeps_ticket_waiting(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session, created_by=user, assigned_to=tech, status=TicketStatus.WAITING_USER
+    )
+
+    _comment(client, ticket.id, tech, "Reminder: we still need the screenshot.")
+
+    detail = client.get(f"{TICKETS_URL}/{ticket.id}", headers=auth_headers(user)).json()
+    assert detail["status"] == "WAITING_USER"
+
+
+def test_author_comment_in_other_statuses_does_not_change_status(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session, created_by=user, assigned_to=tech, status=TicketStatus.IN_PROGRESS
+    )
+
+    _comment(client, ticket.id, user, "Any news?")
+
+    history = client.get(f"{TICKETS_URL}/{ticket.id}/history", headers=auth_headers(user)).json()
+    assert history == []
+
+
 def test_commenting_requires_authentication(
     client: TestClient, db_session: Session, user: User
 ) -> None:
