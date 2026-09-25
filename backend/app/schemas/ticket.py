@@ -1,11 +1,12 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints, computed_field
 
-from app.models.enums import TicketPriority, TicketStatus
+from app.models.enums import SlaStatus, TicketPriority, TicketStatus
 from app.schemas.category import CategorySummary
 from app.schemas.user import UserSummary
+from app.services import sla
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=200)]
 Description = Annotated[
@@ -49,12 +50,25 @@ class TicketSummary(BaseModel):
     assigned_to: UserSummary | None
     created_at: datetime
     updated_at: datetime
+    resolved_at: datetime | None
+    sla_due_at: datetime
+
+    @computed_field
+    @property
+    def sla_status(self) -> SlaStatus | None:
+        """ON_TRACK, AT_RISK, BREACHED or MET, computed at response time (null if cancelled)."""
+        return sla.sla_status(
+            status=self.status,
+            created_at=self.created_at,
+            due=self.sla_due_at,
+            resolved_at=self.resolved_at,
+            now=datetime.now(UTC),
+        )
 
 
 class TicketRead(TicketSummary):
     description: str
     resolution: str | None
-    resolved_at: datetime | None
     closed_at: datetime | None
 
 
