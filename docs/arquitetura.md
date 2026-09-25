@@ -187,6 +187,13 @@ Prefixo `/api/v1`. Documentação interativa em `/api/v1/docs`.
 - O cadastro público rejeita campos extras (`role` inclusive): sem escalonamento de privilégio.
 - Um admin não pode remover a própria role de admin nem se desativar.
 - Política de senha por tamanho (8 a 128 caracteres), seguindo o NIST SP 800-63B.
+- **Trade-off aceito:** `POST /auth/register` responde `409` para e-mail já cadastrado, o que
+  permite descobrir e-mails existentes (o login não permite). Eliminar isso exige responder
+  igual nos dois casos e avisar o dono do e-mail por mensagem, ou seja, envio de e-mail, que está
+  fora do escopo. Em produção, com SSO, não haveria cadastro público.
+- O script do admin inicial nunca promove uma conta existente: se alguém se cadastrar antes
+  com o `FIRST_ADMIN_EMAIL`, o script registra um erro e não cria admin. No container, o script
+  roda antes da API aceitar requisições, então isso não acontece no primeiro deploy.
 
 ## 6. Portfólio × produção
 
