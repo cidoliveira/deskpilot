@@ -38,6 +38,15 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class UserSummary(BaseModel):
+    """Minimal public view of a user, embedded in other resources (e.g. ticket author)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
