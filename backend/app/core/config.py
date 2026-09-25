@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     first_admin_password: SecretStr | None = None
     first_admin_name: str = "Administrator"
 
+    # Optional: password of the demo accounts created by `python -m app.scripts.seed_demo`.
+    demo_password: SecretStr | None = None
+
     def _postgres_url(self, database: str) -> URL:
         # URL.create escapes special characters in the password, unlike string formatting.
         return URL.create(
