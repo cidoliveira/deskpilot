@@ -5,7 +5,7 @@ from itertools import count
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password
-from app.models import User, UserRole
+from app.models import Category, User, UserRole
 
 DEFAULT_PASSWORD = "Str0ng-password"
 # Hashing is intentionally slow (Argon2); hash the default password only once.
@@ -36,6 +36,13 @@ def make_user(
     session.add(user)
     session.flush()
     return user
+
+
+def make_category(session: Session, *, name: str | None = None, is_active: bool = True) -> Category:
+    category = Category(name=name or f"Category {next(_sequence)}", is_active=is_active)
+    session.add(category)
+    session.flush()
+    return category
 
 
 def auth_headers(user: User) -> dict[str, str]:
