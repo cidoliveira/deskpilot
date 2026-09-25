@@ -94,3 +94,21 @@ def test_cancelled_tickets_match_no_sla_filter(
 
     for status in SlaStatus:
         assert cancelled not in _listed(client, admin, sla_status=status.value)
+
+
+def test_cancelled_ticket_with_resolution_date_matches_no_sla_filter(
+    client: TestClient, db_session: Session, admin: User
+) -> None:
+    # Not reachable through the workflow today, but the SQL and Python rules must agree
+    # even for data created another way (imports, future transitions).
+    created = datetime.now(UTC) - timedelta(days=2)
+    ticket = make_ticket(
+        db_session,
+        created_by=admin,
+        status=TicketStatus.CANCELLED,
+        created_at=created,
+        resolved_at=created + timedelta(hours=1),
+    )
+
+    for status in SlaStatus:
+        assert ticket.id not in _listed(client, admin, sla_status=status.value)

@@ -48,8 +48,10 @@ def sla_status(
 def sla_status_condition(target: SlaStatus, now: datetime) -> ColumnElement[bool]:
     """SQL twin of `sla_status()`: tickets whose SLA status is `target` at `now`."""
     now_ = literal(now)
-    resolved = Ticket.resolved_at.is_not(None)
-    unresolved = and_(Ticket.resolved_at.is_(None), Ticket.status != TicketStatus.CANCELLED)
+    # Same order as sla_status(): cancelled tickets are excluded from every branch.
+    not_cancelled = Ticket.status != TicketStatus.CANCELLED
+    resolved = and_(Ticket.resolved_at.is_not(None), not_cancelled)
+    unresolved = and_(Ticket.resolved_at.is_(None), not_cancelled)
     # "At risk" point in epoch seconds: plain numbers can be multiplied by the threshold
     # (multiplying an INTERVAL by a float is deprecated in SQLAlchemy).
     created_s = func.extract("epoch", Ticket.created_at)
