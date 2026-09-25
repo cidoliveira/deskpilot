@@ -90,6 +90,22 @@ def test_closed_ticket_priority_cannot_change(
     assert response.status_code == 409
 
 
+def test_closed_ticket_returns_409_before_checking_permission(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session,
+        created_by=user,
+        assigned_to=tech,
+        status=TicketStatus.CLOSED,
+        resolution="Fixed it.",
+    )
+
+    response = _set_priority(client, ticket.id, user, "HIGH")  # author: never allowed
+
+    assert response.status_code == 409
+
+
 def test_same_priority_records_nothing(
     client: TestClient, db_session: Session, user: User, tech: User
 ) -> None:

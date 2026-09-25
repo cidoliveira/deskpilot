@@ -109,6 +109,32 @@ def test_regular_user_cannot_assign(
     assert response.json()["error"] == "assignment_forbidden"
 
 
+def test_user_gets_404_when_assigning_ticket_they_cannot_see(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(db_session, created_by=make_user(db_session))
+
+    response = _assign(client, ticket.id, user, tech.id)
+
+    assert response.status_code == 404
+
+
+def test_closed_ticket_returns_409_before_checking_permission(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(
+        db_session,
+        created_by=user,
+        assigned_to=tech,
+        status=TicketStatus.CLOSED,
+        resolution="Fixed it.",
+    )
+
+    response = _assign(client, ticket.id, user, tech.id)
+
+    assert response.status_code == 409
+
+
 def test_admin_reassigns_ticket(
     client: TestClient,
     db_session: Session,

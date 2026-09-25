@@ -51,11 +51,11 @@ def change_status(session: Session, ticket_id: int, data: TicketStatusUpdate, us
 
 def assign(session: Session, ticket_id: int, data: TicketAssigneeUpdate, user: User) -> Ticket:
     """Admins assign any technician; a technician can only claim an unassigned ticket."""
-    if user.role == UserRole.USER:
-        raise PermissionDeniedError("Only staff can assign tickets", error="assignment_forbidden")
-
+    # Same order as every other action: visibility (404), then state (409), then permission.
     ticket = lock_ticket(session, ticket_id, user)
     ensure_not_terminal(ticket)
+    if user.role == UserRole.USER:
+        raise PermissionDeniedError("Only staff can assign tickets", error="assignment_forbidden")
 
     assignee = session.get(User, data.assignee_id)
     if assignee is None or not can_be_assigned(assignee):
