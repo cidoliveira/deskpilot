@@ -2,6 +2,7 @@ from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import EmailStr, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -15,7 +16,10 @@ class Environment(StrEnum):
 
 
 class Settings(BaseSettings):
-    """Application settings, read from environment variables (and the .env file if present)."""
+    """Application settings, read from environment variables (and the .env file if present).
+
+    Secrets use `SecretStr`, so they are masked if the settings object is ever logged.
+    """
 
     # Locally the .env lives at the repository root; in Docker the variables come from Compose.
     model_config = SettingsConfigDict(env_file=ROOT_ENV_FILE, extra="ignore")
@@ -27,16 +31,25 @@ class Settings(BaseSettings):
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str
-    postgres_password: str
+    postgres_password: SecretStr
     postgres_db: str = "deskpilot"
     postgres_test_db: str = "deskpilot_test"
+
+    jwt_secret_key: SecretStr = Field(min_length=32)
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = Field(default=60, ge=1)
+
+    # Optional: when set, `python -m app.scripts.create_admin` creates this admin account.
+    first_admin_email: EmailStr | None = None
+    first_admin_password: SecretStr | None = None
+    first_admin_name: str = "Administrator"
 
     def _postgres_url(self, database: str) -> URL:
         # URL.create escapes special characters in the password, unlike string formatting.
         return URL.create(
             drivername="postgresql+psycopg",
             username=self.postgres_user,
-            password=self.postgres_password,
+            password=self.postgres_password.get_secret_value(),
             host=self.postgres_host,
             port=self.postgres_port,
             database=database,
