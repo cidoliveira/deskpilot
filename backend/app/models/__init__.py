@@ -8,6 +8,7 @@ from app.db.base import Base
 from app.models.category import Category
 from app.models.enums import (
     TERMINAL_STATUSES,
+    SlaStatus,
     TicketAction,
     TicketPriority,
     TicketStatus,
@@ -22,6 +23,7 @@ __all__ = [
     "TERMINAL_STATUSES",
     "Base",
     "Category",
+    "SlaStatus",
     "Ticket",
     "TicketAction",
     "TicketComment",

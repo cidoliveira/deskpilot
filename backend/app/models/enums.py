@@ -40,3 +40,12 @@ class TicketAction(StrEnum):
     RESOLVED = "RESOLVED"
     CLOSED = "CLOSED"
     REOPENED = "REOPENED"
+
+
+class SlaStatus(StrEnum):
+    """Computed from the ticket, never stored."""
+
+    ON_TRACK = "ON_TRACK"
+    AT_RISK = "AT_RISK"  # most of the time window is used up
+    BREACHED = "BREACHED"  # past the due date (open) or resolved late
+    MET = "MET"  # resolved on time
