@@ -5,7 +5,8 @@ Every model must be imported here so `Base.metadata` knows about it
 """
 
 from app.db.base import Base
+from app.models.category import Category
 from app.models.enums import UserRole
 from app.models.user import User
 
-__all__ = ["Base", "User", "UserRole"]
+__all__ = ["Base", "Category", "User", "UserRole"]
