@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+API_V1_PREFIX = "/api/v1"
 
 
 class Environment(StrEnum):

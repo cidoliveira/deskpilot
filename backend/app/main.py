@@ -2,8 +2,8 @@ import logging
 
 from fastapi import FastAPI
 
-from app.api.router import API_PREFIX, api_router
-from app.core.config import get_settings
+from app.api.router import api_router
+from app.core.config import API_V1_PREFIX, get_settings
 from app.core.exceptions import register_exception_handlers
 
 DESCRIPTION = """
@@ -24,9 +24,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         description=DESCRIPTION,
-        docs_url=f"{API_PREFIX}/docs",
-        redoc_url=f"{API_PREFIX}/redoc",
-        openapi_url=f"{API_PREFIX}/openapi.json",
+        docs_url=f"{API_V1_PREFIX}/docs",
+        redoc_url=f"{API_V1_PREFIX}/redoc",
+        openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
     register_exception_handlers(app)
     app.include_router(api_router)
