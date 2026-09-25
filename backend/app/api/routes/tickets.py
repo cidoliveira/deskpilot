@@ -3,8 +3,14 @@ from fastapi import APIRouter, status
 from app.api.deps import CurrentUser, DbSession, Pagination
 from app.schemas.common import Page
 from app.schemas.history import TicketEventRead
-from app.schemas.ticket import TicketCreate, TicketRead, TicketSummary, TicketUpdate
-from app.services import ticket_service
+from app.schemas.ticket import (
+    TicketCreate,
+    TicketRead,
+    TicketStatusUpdate,
+    TicketSummary,
+    TicketUpdate,
+)
+from app.services import ticket_service, ticket_workflow_service
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -51,3 +57,15 @@ def get_ticket_history(
     """Audit trail of the ticket, oldest first. Same visibility as the ticket itself."""
     entries = ticket_service.get_history(db, ticket_id, current_user)
     return [TicketEventRead.model_validate(entry) for entry in entries]
+
+
+@router.patch("/{ticket_id}/status", response_model=TicketRead)
+def change_status(
+    ticket_id: int, data: TicketStatusUpdate, db: DbSession, current_user: CurrentUser
+) -> TicketRead:
+    """Move the ticket through the workflow. Send `resolution` when moving to RESOLVED.
+
+    Invalid transition: 409. Wrong actor: 403. Missing assignee or resolution: 422.
+    """
+    ticket = ticket_workflow_service.change_status(db, ticket_id, data, current_user)
+    return TicketRead.model_validate(ticket)

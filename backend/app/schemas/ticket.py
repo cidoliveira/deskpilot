@@ -56,3 +56,17 @@ class TicketRead(TicketSummary):
     resolution: str | None
     resolved_at: datetime | None
     closed_at: datetime | None
+
+
+Resolution = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=10, max_length=10_000)
+]
+
+
+class TicketStatusUpdate(BaseModel):
+    """`resolution` is required when moving to RESOLVED and rejected otherwise."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: TicketStatus
+    resolution: Resolution | None = None
