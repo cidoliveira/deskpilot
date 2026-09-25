@@ -2,6 +2,7 @@ from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession, Pagination
 from app.schemas.common import Page
+from app.schemas.history import TicketEventRead
 from app.schemas.ticket import TicketCreate, TicketRead, TicketSummary, TicketUpdate
 from app.services import ticket_service
 
@@ -41,3 +42,12 @@ def update_ticket(
     """
     ticket = ticket_service.update_ticket(db, ticket_id, data, current_user)
     return TicketRead.model_validate(ticket)
+
+
+@router.get("/{ticket_id}/history", response_model=list[TicketEventRead])
+def get_ticket_history(
+    ticket_id: int, db: DbSession, current_user: CurrentUser
+) -> list[TicketEventRead]:
+    """Audit trail of the ticket, oldest first. Same visibility as the ticket itself."""
+    entries = ticket_service.get_history(db, ticket_id, current_user)
+    return [TicketEventRead.model_validate(entry) for entry in entries]

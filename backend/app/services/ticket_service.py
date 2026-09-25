@@ -8,9 +8,9 @@ from app.core.exceptions import (
     PermissionDeniedError,
 )
 from app.db.pagination import PageParams, PageResult, paginate
-from app.models import TERMINAL_STATUSES, Ticket, User
+from app.models import TERMINAL_STATUSES, Ticket, TicketAction, User
 from app.schemas.ticket import TicketCreate, TicketUpdate
-from app.services import category_service
+from app.services import category_service, history_service
 from app.services.ticket_policy import can_edit, visible_to
 
 # Load the related rows used by the response schemas in a fixed number of queries
@@ -32,6 +32,8 @@ def create_ticket(session: Session, data: TicketCreate, author: User) -> Ticket:
         created_by=author,
     )
     session.add(ticket)
+    session.flush()  # assigns ticket.id, needed by the history event
+    history_service.record(session, ticket, TicketAction.CREATED, author, new=ticket.status)
     session.commit()
     return get_ticket(session, ticket.id, author)
 
@@ -72,9 +74,23 @@ def update_ticket(session: Session, ticket_id: int, data: TicketUpdate, user: Us
 
     category_id = changes.pop("category_id", None)
     if category_id is not None and category_id != ticket.category_id:
-        ticket.category = category_service.get_active_category(session, category_id)
+        new_category = category_service.get_active_category(session, category_id)
+        history_service.record(
+            session,
+            ticket,
+            TicketAction.CATEGORY_CHANGED,
+            user,
+            old=ticket.category_id,
+            new=new_category.id,
+        )
+        ticket.category = new_category
 
     for field, value in changes.items():
         setattr(ticket, field, value)
     session.commit()
     return get_ticket(session, ticket.id, user)
+
+
+def get_history(session: Session, ticket_id: int, user: User) -> list[history_service.HistoryEntry]:
+    ticket = get_ticket(session, ticket_id, user)
+    return history_service.list_history(session, ticket)
