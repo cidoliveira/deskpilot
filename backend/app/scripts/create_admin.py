@@ -28,7 +28,13 @@ def ensure_first_admin(session: Session, settings: Settings) -> User | None:
     existing = user_service.get_user_by_email(session, settings.first_admin_email)
     if existing is not None:
         if existing.role != UserRole.ADMIN:
-            logger.warning("%s exists but is not an admin; leaving it unchanged", existing.email)
+            # Never promote automatically: someone may have self-registered with this e-mail.
+            logger.error(
+                "%s already exists as %s and was NOT promoted; no admin was created. "
+                "Promote it manually or use another FIRST_ADMIN_EMAIL.",
+                existing.email,
+                existing.role,
+            )
         else:
             logger.info("Admin %s already exists", existing.email)
         return existing
