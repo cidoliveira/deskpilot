@@ -6,8 +6,15 @@ Every model must be imported here so `Base.metadata` knows about it
 
 from app.db.base import Base
 from app.models.category import Category
-from app.models.enums import TERMINAL_STATUSES, TicketPriority, TicketStatus, UserRole
+from app.models.enums import (
+    TERMINAL_STATUSES,
+    TicketAction,
+    TicketPriority,
+    TicketStatus,
+    UserRole,
+)
 from app.models.ticket import Ticket
+from app.models.ticket_event import TicketEvent
 from app.models.user import User
 
 __all__ = [
@@ -15,6 +22,8 @@ __all__ = [
     "Base",
     "Category",
     "Ticket",
+    "TicketAction",
+    "TicketEvent",
     "TicketPriority",
     "TicketStatus",
     "User",

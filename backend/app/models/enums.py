@@ -26,3 +26,17 @@ class TicketPriority(StrEnum):
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
+
+
+class TicketAction(StrEnum):
+    """Kind of change recorded in the ticket history."""
+
+    CREATED = "CREATED"
+    ASSIGNED = "ASSIGNED"
+    STATUS_CHANGED = "STATUS_CHANGED"
+    PRIORITY_CHANGED = "PRIORITY_CHANGED"
+    CATEGORY_CHANGED = "CATEGORY_CHANGED"
+    # Status changes with their own action, so the timeline reads naturally.
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
+    REOPENED = "REOPENED"
