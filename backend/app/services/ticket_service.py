@@ -48,6 +48,30 @@ def get_ticket(session: Session, ticket_id: int, user: User) -> Ticket:
     return ticket
 
 
+def lock_ticket(session: Session, ticket_id: int, user: User) -> Ticket:
+    """Load a visible ticket with `SELECT ... FOR UPDATE`.
+
+    The row stays locked until commit/rollback, so two concurrent changes to the same
+    ticket (e.g. two technicians claiming it) run one after the other and the second one
+    sees the first one's result instead of overwriting it.
+    """
+    stmt = (
+        select(Ticket)
+        .where(Ticket.id == ticket_id, visible_to(user))
+        .with_for_update()
+        .execution_options(populate_existing=True)  # refresh a possibly stale object
+    )
+    ticket = session.scalar(stmt)
+    if ticket is None:
+        raise NotFoundError("Ticket not found", error="ticket_not_found")
+    return ticket
+
+
+def ensure_not_terminal(ticket: Ticket) -> None:
+    if ticket.status in TERMINAL_STATUSES:
+        raise ConflictError(f"{ticket.status} tickets cannot be changed", error="ticket_closed")
+
+
 def list_tickets(session: Session, user: User, params: PageParams) -> PageResult[Ticket]:
     stmt = (
         select(Ticket)
@@ -59,9 +83,8 @@ def list_tickets(session: Session, user: User, params: PageParams) -> PageResult
 
 
 def update_ticket(session: Session, ticket_id: int, data: TicketUpdate, user: User) -> Ticket:
-    ticket = get_ticket(session, ticket_id, user)
-    if ticket.status in TERMINAL_STATUSES:
-        raise ConflictError(f"{ticket.status} tickets cannot be edited", error="ticket_closed")
+    ticket = lock_ticket(session, ticket_id, user)
+    ensure_not_terminal(ticket)
     if not can_edit(user, ticket):
         raise PermissionDeniedError("You cannot edit this ticket", error="ticket_edit_forbidden")
 
