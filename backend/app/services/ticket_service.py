@@ -59,7 +59,9 @@ def lock_ticket(session: Session, ticket_id: int, user: User) -> Ticket:
         select(Ticket)
         .where(Ticket.id == ticket_id, visible_to(user))
         .with_for_update()
-        .execution_options(populate_existing=True)  # refresh a possibly stale object
+        # Refresh objects already in memory. SQLAlchemy 2 already implies this for FOR
+        # UPDATE queries; it is kept explicit because correctness depends on it.
+        .execution_options(populate_existing=True)
     )
     ticket = session.scalar(stmt)
     if ticket is None:
