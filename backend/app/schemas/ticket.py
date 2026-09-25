@@ -65,6 +65,7 @@ class TicketActionsRead(BaseModel):
     can_claim: bool
     can_assign: bool
     can_change_priority: bool
+    can_comment: bool
     allowed_transitions: list[TicketStatus]
 
 

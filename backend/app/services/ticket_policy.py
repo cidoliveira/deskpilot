@@ -62,6 +62,7 @@ class TicketActions:
     can_claim: bool
     can_assign: bool
     can_change_priority: bool
+    can_comment: bool
     allowed_transitions: list[TicketStatus]
 
 
@@ -72,5 +73,7 @@ def allowed_actions(user: User, ticket: Ticket) -> TicketActions:
         can_claim=active and user.role == UserRole.TECHNICIAN and ticket.assigned_to_id is None,
         can_assign=active and user.role == UserRole.ADMIN,
         can_change_priority=active and can_change_priority(user, ticket),
+        # Anyone who can see the ticket may comment until it is closed.
+        can_comment=active,
         allowed_transitions=workflow.allowed_transitions(user, ticket),
     )

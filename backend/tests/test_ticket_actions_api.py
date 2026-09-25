@@ -22,6 +22,7 @@ def test_author_of_open_ticket(client: TestClient, db_session: Session) -> None:
         "can_claim": False,
         "can_assign": False,
         "can_change_priority": False,
+        "can_comment": True,
         "allowed_transitions": ["CANCELLED"],
     }
 
@@ -91,6 +92,7 @@ def test_nothing_is_allowed_on_closed_ticket_even_for_admin(
         "can_claim": False,
         "can_assign": False,
         "can_change_priority": False,
+        "can_comment": False,
         "allowed_transitions": [],
     }
 
