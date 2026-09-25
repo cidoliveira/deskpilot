@@ -87,12 +87,18 @@ async def _http_exception_handler(_: Request, exc: Exception) -> JSONResponse:
     return error_response(exc.status_code, error, message, headers=exc.headers)
 
 
+def _field_name(loc: tuple) -> str:
+    # Skip the location prefix ("body", "query"...) so clients get the field path.
+    if len(loc) > 1 and loc[0] in {"body", "query", "path", "header", "cookie"}:
+        loc = loc[1:]
+    return ".".join(str(part) for part in loc)
+
+
 async def _validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
     details = [
         {
-            # Skip the location prefix ("body", "query"...) so clients get the field path.
-            "field": ".".join(str(part) for part in err["loc"][1:]) or str(err["loc"][0]),
+            "field": _field_name(err["loc"]),
             "message": err["msg"],
         }
         for err in exc.errors()
