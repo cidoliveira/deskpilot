@@ -3,9 +3,12 @@
 Kept separate from the service so the rules are easy to find, read and test.
 """
 
+from dataclasses import dataclass
+
 from sqlalchemy import ColumnElement, and_, or_, true
 
-from app.models import Ticket, TicketStatus, User, UserRole
+from app.models import TERMINAL_STATUSES, Ticket, TicketStatus, User, UserRole
+from app.services import workflow
 
 
 def visible_to(user: User) -> ColumnElement[bool]:
@@ -48,3 +51,26 @@ def can_change_priority(user: User, ticket: Ticket) -> bool:
 def can_be_assigned(user: User) -> bool:
     """Only active staff can be responsible for a ticket."""
     return user.is_active and user.role in {UserRole.TECHNICIAN, UserRole.ADMIN}
+
+
+@dataclass(frozen=True)
+class TicketActions:
+    """What `user` can do with a ticket right now. The frontend only renders these flags,
+    so the rules live in one place (here) instead of being duplicated in TypeScript."""
+
+    can_edit: bool
+    can_claim: bool
+    can_assign: bool
+    can_change_priority: bool
+    allowed_transitions: list[TicketStatus]
+
+
+def allowed_actions(user: User, ticket: Ticket) -> TicketActions:
+    active = ticket.status not in TERMINAL_STATUSES
+    return TicketActions(
+        can_edit=active and can_edit(user, ticket),
+        can_claim=active and user.role == UserRole.TECHNICIAN and ticket.assigned_to_id is None,
+        can_assign=active and user.role == UserRole.ADMIN,
+        can_change_priority=active and can_change_priority(user, ticket),
+        allowed_transitions=workflow.allowed_transitions(user, ticket),
+    )

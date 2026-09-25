@@ -1,11 +1,14 @@
 from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession, Pagination
+from app.models import Ticket, User
 from app.schemas.common import Page
 from app.schemas.history import TicketEventRead
 from app.schemas.ticket import (
+    TicketActionsRead,
     TicketAssigneeUpdate,
     TicketCreate,
+    TicketDetail,
     TicketPriorityUpdate,
     TicketRead,
     TicketStatusUpdate,
@@ -13,14 +16,22 @@ from app.schemas.ticket import (
     TicketUpdate,
 )
 from app.services import ticket_service, ticket_workflow_service
+from app.services.ticket_policy import allowed_actions
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 
-@router.post("", response_model=TicketRead, status_code=status.HTTP_201_CREATED)
-def create_ticket(data: TicketCreate, db: DbSession, current_user: CurrentUser) -> TicketRead:
+def _detail(ticket: Ticket, user: User) -> TicketDetail:
+    return TicketDetail(
+        **TicketRead.model_validate(ticket).model_dump(),
+        allowed_actions=TicketActionsRead.model_validate(allowed_actions(user, ticket)),
+    )
+
+
+@router.post("", response_model=TicketDetail, status_code=status.HTTP_201_CREATED)
+def create_ticket(data: TicketCreate, db: DbSession, current_user: CurrentUser) -> TicketDetail:
     ticket = ticket_service.create_ticket(db, data, current_user)
-    return TicketRead.model_validate(ticket)
+    return _detail(ticket, current_user)
 
 
 @router.get("", response_model=Page[TicketSummary])
@@ -35,21 +46,21 @@ def list_tickets(
     return Page[TicketSummary].model_validate(result)
 
 
-@router.get("/{ticket_id}", response_model=TicketRead)
-def get_ticket(ticket_id: int, db: DbSession, current_user: CurrentUser) -> TicketRead:
-    return TicketRead.model_validate(ticket_service.get_ticket(db, ticket_id, current_user))
+@router.get("/{ticket_id}", response_model=TicketDetail)
+def get_ticket(ticket_id: int, db: DbSession, current_user: CurrentUser) -> TicketDetail:
+    return _detail(ticket_service.get_ticket(db, ticket_id, current_user), current_user)
 
 
-@router.patch("/{ticket_id}", response_model=TicketRead)
+@router.patch("/{ticket_id}", response_model=TicketDetail)
 def update_ticket(
     ticket_id: int, data: TicketUpdate, db: DbSession, current_user: CurrentUser
-) -> TicketRead:
+) -> TicketDetail:
     """Edit title, description or category.
 
     Author: only while OPEN. Assigned technician and admins: until the ticket is closed.
     """
     ticket = ticket_service.update_ticket(db, ticket_id, data, current_user)
-    return TicketRead.model_validate(ticket)
+    return _detail(ticket, current_user)
 
 
 @router.get("/{ticket_id}/history", response_model=list[TicketEventRead])
@@ -61,32 +72,32 @@ def get_ticket_history(
     return [TicketEventRead.model_validate(entry) for entry in entries]
 
 
-@router.patch("/{ticket_id}/status", response_model=TicketRead)
+@router.patch("/{ticket_id}/status", response_model=TicketDetail)
 def change_status(
     ticket_id: int, data: TicketStatusUpdate, db: DbSession, current_user: CurrentUser
-) -> TicketRead:
+) -> TicketDetail:
     """Move the ticket through the workflow. Send `resolution` when moving to RESOLVED.
 
     Invalid transition: 409. Wrong actor: 403. Missing assignee or resolution: 422.
     """
     ticket = ticket_workflow_service.change_status(db, ticket_id, data, current_user)
-    return TicketRead.model_validate(ticket)
+    return _detail(ticket, current_user)
 
 
-@router.put("/{ticket_id}/assignee", response_model=TicketRead)
+@router.put("/{ticket_id}/assignee", response_model=TicketDetail)
 def assign_ticket(
     ticket_id: int, data: TicketAssigneeUpdate, db: DbSession, current_user: CurrentUser
-) -> TicketRead:
+) -> TicketDetail:
     """Admins assign any active technician; technicians claim unassigned tickets
     (send their own id). Concurrent claims are serialized with a row lock."""
     ticket = ticket_workflow_service.assign(db, ticket_id, data, current_user)
-    return TicketRead.model_validate(ticket)
+    return _detail(ticket, current_user)
 
 
-@router.patch("/{ticket_id}/priority", response_model=TicketRead)
+@router.patch("/{ticket_id}/priority", response_model=TicketDetail)
 def change_priority(
     ticket_id: int, data: TicketPriorityUpdate, db: DbSession, current_user: CurrentUser
-) -> TicketRead:
+) -> TicketDetail:
     """Assigned technician or admin only."""
     ticket = ticket_workflow_service.change_priority(db, ticket_id, data, current_user)
-    return TicketRead.model_validate(ticket)
+    return _detail(ticket, current_user)

@@ -58,6 +58,22 @@ class TicketRead(TicketSummary):
     closed_at: datetime | None
 
 
+class TicketActionsRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    can_edit: bool
+    can_claim: bool
+    can_assign: bool
+    can_change_priority: bool
+    allowed_transitions: list[TicketStatus]
+
+
+class TicketDetail(TicketRead):
+    """Single-ticket response: the ticket plus what the current user may do with it."""
+
+    allowed_actions: TicketActionsRead
+
+
 Resolution = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=10, max_length=10_000)
 ]
