@@ -110,6 +110,17 @@ Outras decisões do workflow:
   `can_assign`, `can_change_priority` e `allowed_transitions`, calculados pela mesma política
   que valida as ações. O frontend só desenha os botões.
 
+### Comentários
+
+- Quem vê o ticket pode comentar, até ele ficar CLOSED ou CANCELLED (`409 ticket_closed`).
+- O ticket é travado (`FOR UPDATE`) ao comentar, para um comentário não entrar enquanto outra
+  requisição está fechando o chamado.
+- **Regra automática:** se o ticket está em WAITING_USER e quem comenta é o autor, ele volta
+  para IN_PROGRESS. É uma regra do sistema (não passa pela tabela de permissões manuais), mas
+  fica no histórico como `STATUS_CHANGED` feito pelo autor.
+- Comentários não são editados nem apagados, como numa conversa de suporte.
+  **[PROD]** comentários internos, visíveis só para técnicos, e anexos.
+
 ### Permissões
 
 | Ação | USER | TECHNICIAN | ADMIN |

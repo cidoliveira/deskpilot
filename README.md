@@ -30,7 +30,7 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Máquina de estados de status, atribuição (com trava de concorrência), prioridade |
 | ✅ | Histórico auditável de todas as mudanças, gravado na mesma transação |
 | ✅ | `allowed_actions`: a API informa ao frontend o que o usuário pode fazer em cada ticket |
-| ⏳ | Comentários |
+| ✅ | Comentários, bloqueados em tickets encerrados; a resposta do autor retoma um ticket em WAITING_USER |
 | ⏳ | SLA por prioridade, filtros, busca, paginação e ordenação |
 | ⏳ | Dashboard de métricas |
 | ⏳ | Frontend React |
@@ -158,7 +158,7 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 2:** usuários, autenticação JWT, roles
 - [x] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
 - [x] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
-- [ ] **Etapa 5:** comentários
+- [x] **Etapa 5:** comentários
 - [ ] **Etapa 6:** SLA, filtros, busca e ordenação
 - [ ] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
 - [ ] **Etapa 8:** frontend React
