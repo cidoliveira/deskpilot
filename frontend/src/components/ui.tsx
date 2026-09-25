@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { errorMessage } from "../lib/errors";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -67,7 +68,7 @@ export function PageHeader({
 
 export function ErrorBanner({ error }: { error: unknown }) {
   if (!error) return null;
-  const message = error instanceof Error ? error.message : "Algo deu errado.";
+  const message = errorMessage(error);
   return (
     <div
       role="alert"
