@@ -14,6 +14,7 @@ from app.models.enums import (
     UserRole,
 )
 from app.models.ticket import Ticket
+from app.models.ticket_comment import TicketComment
 from app.models.ticket_event import TicketEvent
 from app.models.user import User
 
@@ -23,6 +24,7 @@ __all__ = [
     "Category",
     "Ticket",
     "TicketAction",
+    "TicketComment",
     "TicketEvent",
     "TicketPriority",
     "TicketStatus",
