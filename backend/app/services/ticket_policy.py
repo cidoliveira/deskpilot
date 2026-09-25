@@ -40,6 +40,11 @@ def can_edit(user: User, ticket: Ticket) -> bool:
     return ticket.created_by_id == user.id and ticket.status == TicketStatus.OPEN
 
 
+def can_change_priority(user: User, ticket: Ticket) -> bool:
+    """Admins, or the technician working on the ticket (users only choose it on creation)."""
+    return user.role == UserRole.ADMIN or ticket.assigned_to_id == user.id
+
+
 def can_be_assigned(user: User) -> bool:
     """Only active staff can be responsible for a ticket."""
     return user.is_active and user.role in {UserRole.TECHNICIAN, UserRole.ADMIN}

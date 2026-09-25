@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import BusinessRuleError, ConflictError, PermissionDeniedError
 from app.models import Ticket, TicketAction, TicketStatus, User, UserRole
-from app.schemas.ticket import TicketAssigneeUpdate, TicketStatusUpdate
+from app.schemas.ticket import TicketAssigneeUpdate, TicketPriorityUpdate, TicketStatusUpdate
 from app.services import history_service, workflow
-from app.services.ticket_policy import can_be_assigned
+from app.services.ticket_policy import can_be_assigned, can_change_priority
 from app.services.ticket_service import ensure_not_terminal, get_ticket, lock_ticket
 
 
@@ -79,5 +79,30 @@ def assign(session: Session, ticket_id: int, data: TicketAssigneeUpdate, user: U
             session, ticket, TicketAction.ASSIGNED, user, old=ticket.assigned_to_id, new=assignee.id
         )
         ticket.assigned_to = assignee
+    session.commit()  # also releases the row lock when nothing changed
+    return get_ticket(session, ticket.id, user)
+
+
+def change_priority(
+    session: Session, ticket_id: int, data: TicketPriorityUpdate, user: User
+) -> Ticket:
+    ticket = lock_ticket(session, ticket_id, user)
+    ensure_not_terminal(ticket)
+    if not can_change_priority(user, ticket):
+        raise PermissionDeniedError(
+            "Only the assigned technician or an admin can change the priority",
+            error="priority_change_forbidden",
+        )
+
+    if ticket.priority != data.priority:
+        history_service.record(
+            session,
+            ticket,
+            TicketAction.PRIORITY_CHANGED,
+            user,
+            old=ticket.priority,
+            new=data.priority,
+        )
+        ticket.priority = data.priority
     session.commit()  # also releases the row lock when nothing changed
     return get_ticket(session, ticket.id, user)

@@ -6,6 +6,7 @@ from app.schemas.history import TicketEventRead
 from app.schemas.ticket import (
     TicketAssigneeUpdate,
     TicketCreate,
+    TicketPriorityUpdate,
     TicketRead,
     TicketStatusUpdate,
     TicketSummary,
@@ -79,4 +80,13 @@ def assign_ticket(
     """Admins assign any active technician; technicians claim unassigned tickets
     (send their own id). Concurrent claims are serialized with a row lock."""
     ticket = ticket_workflow_service.assign(db, ticket_id, data, current_user)
+    return TicketRead.model_validate(ticket)
+
+
+@router.patch("/{ticket_id}/priority", response_model=TicketRead)
+def change_priority(
+    ticket_id: int, data: TicketPriorityUpdate, db: DbSession, current_user: CurrentUser
+) -> TicketRead:
+    """Assigned technician or admin only."""
+    ticket = ticket_workflow_service.change_priority(db, ticket_id, data, current_user)
     return TicketRead.model_validate(ticket)
