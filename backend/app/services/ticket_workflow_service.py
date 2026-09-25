@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import BusinessRuleError, ConflictError, PermissionDeniedError
 from app.models import Ticket, TicketAction, TicketStatus, User, UserRole
 from app.schemas.ticket import TicketAssigneeUpdate, TicketPriorityUpdate, TicketStatusUpdate
-from app.services import history_service, workflow
+from app.services import history_service, sla, workflow
 from app.services.ticket_policy import can_be_assigned, can_change_priority
 from app.services.ticket_service import ensure_not_terminal, get_ticket, lock_ticket
 
@@ -104,5 +104,7 @@ def change_priority(
             new=data.priority,
         )
         ticket.priority = data.priority
+        # The SLA window is recalculated from the creation time with the new priority.
+        ticket.sla_due_at = sla.due_at(ticket.created_at, data.priority)
     session.commit()  # also releases the row lock when nothing changed
     return get_ticket(session, ticket.id, user)

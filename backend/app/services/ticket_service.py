@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -10,7 +12,7 @@ from app.core.exceptions import (
 from app.db.pagination import PageParams, PageResult, paginate
 from app.models import TERMINAL_STATUSES, Ticket, TicketAction, User
 from app.schemas.ticket import TicketCreate, TicketUpdate
-from app.services import category_service, history_service
+from app.services import category_service, history_service, sla
 from app.services.ticket_policy import can_edit, visible_to
 
 # Load the related rows used by the response schemas in a fixed number of queries
@@ -24,12 +26,16 @@ _RELATIONS = (
 
 def create_ticket(session: Session, data: TicketCreate, author: User) -> Ticket:
     category = category_service.get_active_category(session, data.category_id)
+    now = datetime.now(UTC)
     ticket = Ticket(
         title=data.title,
         description=data.description,
         category=category,
         priority=data.priority,
         created_by=author,
+        # Set explicitly so the SLA window starts exactly at the creation time.
+        created_at=now,
+        sla_due_at=sla.due_at(now, data.priority),
     )
     session.add(ticket)
     session.flush()  # assigns ticket.id, needed by the history event

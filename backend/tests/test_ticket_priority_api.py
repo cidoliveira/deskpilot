@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -117,3 +119,15 @@ def test_same_priority_records_nothing(
 
     assert response.status_code == 200
     assert _history(client, ticket.id, tech) == []
+
+
+def test_priority_change_recalculates_sla_due_date(
+    client: TestClient, db_session: Session, user: User, tech: User
+) -> None:
+    ticket = make_ticket(db_session, created_by=user, assigned_to=tech)  # MEDIUM: 24h
+    expected = ticket.created_at + timedelta(hours=4)
+
+    _set_priority(client, ticket.id, tech, "CRITICAL")
+
+    db_session.refresh(ticket)
+    assert ticket.sla_due_at == expected

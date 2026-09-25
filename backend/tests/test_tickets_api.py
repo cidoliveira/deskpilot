@@ -1,8 +1,10 @@
+from datetime import timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import Category, TicketStatus, User, UserRole
+from app.models import Category, Ticket, TicketStatus, User, UserRole
 from tests.factories import auth_headers, make_category, make_ticket, make_user
 
 TICKETS_URL = "/api/v1/tickets"
@@ -60,6 +62,17 @@ def test_user_creates_ticket(client: TestClient, user: User, category: Category)
     assert body["assigned_to"] is None
     assert body["category"] == {"id": category.id, "name": "Workstations"}
     assert body["resolution"] is None
+
+
+def test_new_ticket_gets_sla_due_date_from_priority(
+    client: TestClient, db_session: Session, user: User, category: Category
+) -> None:
+    response = client.post(
+        TICKETS_URL, headers=auth_headers(user), json=_payload(category, priority="CRITICAL")
+    )
+
+    ticket = db_session.get(Ticket, response.json()["id"])
+    assert ticket.sla_due_at - ticket.created_at == timedelta(hours=4)
 
 
 def test_user_can_choose_priority(client: TestClient, user: User, category: Category) -> None:

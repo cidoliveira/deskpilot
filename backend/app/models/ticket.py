@@ -41,6 +41,8 @@ class Ticket(TimestampMixin, Base):
     created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     assigned_to_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True)
     resolution: Mapped[str | None] = mapped_column(Text)
+    # Stored (not computed on the fly) so "overdue" filters are a simple indexed comparison.
+    sla_due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

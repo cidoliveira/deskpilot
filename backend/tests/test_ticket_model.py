@@ -57,8 +57,9 @@ def test_database_rejects_unknown_status(db_session: Session) -> None:
     with pytest.raises(IntegrityError, match="ck_tickets_ticket_status"), db_session.begin_nested():
         db_session.execute(
             text(
-                "INSERT INTO tickets (title, description, category_id, created_by_id, status) "
-                "VALUES ('t', 'd', :category, :author, 'DONE')"
+                "INSERT INTO tickets "
+                "(title, description, category_id, created_by_id, status, sla_due_at) "
+                "VALUES ('t', 'd', :category, :author, 'DONE', now())"
             ),
             {"category": category.id, "author": author.id},
         )

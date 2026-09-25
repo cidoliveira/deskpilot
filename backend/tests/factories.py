@@ -1,11 +1,13 @@
 """Small helpers to create test data directly in the database."""
 
+from datetime import UTC, datetime
 from itertools import count
 
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, hash_password
 from app.models import Category, Ticket, TicketPriority, TicketStatus, User, UserRole
+from app.services import sla
 
 DEFAULT_PASSWORD = "Str0ng-password"
 # Hashing is intentionally slow (Argon2); hash the default password only once.
@@ -56,7 +58,10 @@ def make_ticket(
     status: TicketStatus = TicketStatus.OPEN,
     assigned_to: User | None = None,
     resolution: str | None = None,
+    created_at: datetime | None = None,
+    resolved_at: datetime | None = None,
 ) -> Ticket:
+    created_at = created_at or datetime.now(UTC)
     ticket = Ticket(
         title=title or f"Ticket {next(_sequence)}",
         description=description,
@@ -66,6 +71,9 @@ def make_ticket(
         created_by=created_by,
         assigned_to=assigned_to,
         resolution=resolution,
+        created_at=created_at,
+        sla_due_at=sla.due_at(created_at, priority),
+        resolved_at=resolved_at,
     )
     session.add(ticket)
     session.flush()
