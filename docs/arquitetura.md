@@ -174,6 +174,20 @@ Prefixo `/api/v1`. Documentação interativa em `/api/v1/docs`.
 | Pacotes | uv + pyproject.toml + uv.lock | Rápido e reprodutível |
 | Frontend | TanStack Query + Context para auth | Não há estado global que justifique Redux |
 
+### Autenticação e autorização
+
+- Login pelo fluxo OAuth2 *password* (form `username`/`password`), compatível com o Swagger.
+- O token JWT carrega só `sub` (id do usuário), `iat` e `exp`. A role **não** vai no token:
+  o usuário é recarregado do banco a cada request, então promoção, rebaixamento e
+  desativação valem na hora.
+- E-mail desconhecido e senha errada devolvem a mesma resposta (`invalid_credentials`), e
+  o e-mail desconhecido ainda executa uma verificação de hash fictícia para o tempo de
+  resposta não revelar quais e-mails existem.
+- Conta inativa só recebe `403 user_inactive` depois de uma senha correta.
+- O cadastro público rejeita campos extras (`role` inclusive): sem escalonamento de privilégio.
+- Um admin não pode remover a própria role de admin nem se desativar.
+- Política de senha por tamanho (8 a 128 caracteres), seguindo o NIST SP 800-63B.
+
 ## 6. Portfólio × produção
 
 | Tema | [P] Aqui | [PROD] Em uma empresa |
@@ -188,3 +202,6 @@ Prefixo `/api/v1`. Documentação interativa em `/api/v1/docs`.
 | Migrations | Rodam no startup do container | Passo separado no pipeline de deploy |
 | Imagem Docker | Única, com dependências de dev e reload | Multi-stage, sem dev deps, sem bind mount |
 | Observabilidade | logging padrão | Logs estruturados, métricas, tracing, rate limit |
+| E-mail único | Normalizado em minúsculas + UNIQUE | `citext` ou índice único em `lower(email)` |
+| Admin inicial | Criado no startup a partir do `.env` | Provisionado pelo IdP / processo de onboarding |
+| Senha | Tamanho mínimo | + verificação contra senhas vazadas (ex.: HIBP), MFA |

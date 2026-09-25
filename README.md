@@ -23,7 +23,8 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | Status | Funcionalidade |
 |---|---|
 | ✅ | Estrutura da API, Docker Compose, PostgreSQL, migrations (Alembic), tratamento de erros padronizado |
-| ⏳ | Autenticação JWT e controle de acesso por role (USER, TECHNICIAN, ADMIN) |
+| ✅ | Autenticação JWT, senhas com Argon2 e controle de acesso por role (USER, TECHNICIAN, ADMIN) |
+| ✅ | Gestão de usuários pelo administrador, com paginação e filtros |
 | ⏳ | Tickets com máquina de estados e regras de visibilidade |
 | ⏳ | Atribuição, prioridade e histórico auditável |
 | ⏳ | Comentários |
@@ -72,7 +73,18 @@ docker compose up --build
 - Swagger (OpenAPI): http://localhost:8000/api/v1/docs
 - ReDoc: http://localhost:8000/api/v1/redoc
 
-As migrations são aplicadas automaticamente quando o container da API sobe.
+Ao subir, o container da API aplica as migrations e cria o admin inicial definido em
+`FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` (se ainda não existir).
+
+### Autenticação
+
+1. Crie uma conta em `POST /api/v1/auth/register` (sempre com role `USER`)
+   ou entre com o admin inicial.
+2. Faça login em `POST /api/v1/auth/login` (form OAuth2: `username` = e-mail, `password`).
+3. Envie o token no header `Authorization: Bearer <token>`.
+
+No Swagger, o botão **Authorize** faz o login direto pela interface.
+Técnicos e administradores são criados por um admin em `POST /api/v1/users`.
 
 ### Configuração (.env)
 
@@ -86,6 +98,11 @@ As migrations são aplicadas automaticamente quando o container da API sobe.
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` | Credenciais do banco | — (obrigatórias) |
 | `POSTGRES_DB` | Banco da aplicação | `deskpilot` |
 | `POSTGRES_TEST_DB` | Banco usado pelos testes (precisa terminar em `_test`) | `deskpilot_test` |
+| `JWT_SECRET_KEY` | Chave de assinatura dos tokens (mínimo 32 caracteres) | — (obrigatória) |
+| `JWT_ALGORITHM` | Algoritmo do JWT | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Validade do token | `60` |
+| `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` | Admin criado no startup, se ainda não existir | opcional |
+| `FIRST_ADMIN_NAME` | Nome do admin inicial | `Administrator` |
 
 O arquivo `.env` nunca é versionado; apenas `.env.example`.
 
@@ -135,7 +152,7 @@ Todos os erros seguem o mesmo formato:
 ## Roadmap
 
 - [x] **Etapa 1:** FastAPI, Docker, PostgreSQL, SQLAlchemy, Alembic, tratamento de erros
-- [ ] **Etapa 2:** usuários, autenticação JWT, roles
+- [x] **Etapa 2:** usuários, autenticação JWT, roles
 - [ ] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
 - [ ] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
 - [ ] **Etapa 5:** comentários
