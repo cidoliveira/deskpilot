@@ -86,7 +86,7 @@ def list_tickets(
 ) -> PageResult[Ticket]:
     # Visibility first, filters on top: filters can only narrow what the user may see.
     stmt = select(Ticket).where(visible_to(user)).options(*_RELATIONS)
-    stmt = ticket_queries.apply_filters(stmt, filters, user)
+    stmt = ticket_queries.apply_filters(stmt, filters, user, datetime.now(UTC))
     stmt = stmt.order_by(Ticket.created_at.desc(), Ticket.id.desc())
     return paginate(session, stmt, params)
 

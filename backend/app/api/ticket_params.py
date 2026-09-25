@@ -7,7 +7,7 @@ from fastapi import Depends, Query
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
-from app.models import TicketPriority, TicketStatus
+from app.models import SlaStatus, TicketPriority, TicketStatus
 from app.schemas.ticket_filters import TicketFilters
 
 
@@ -26,6 +26,9 @@ def get_ticket_filters(
         str | None,
         Query(max_length=100, description="Case-insensitive search in title and description"),
     ] = None,
+    sla_status: Annotated[
+        SlaStatus | None, Query(description="ON_TRACK, AT_RISK, BREACHED or MET, right now")
+    ] = None,
     created_from: Annotated[date | None, Query(description="Created on or after (UTC)")] = None,
     created_to: Annotated[date | None, Query(description="Created on or before (UTC)")] = None,
 ) -> TicketFilters:
@@ -37,6 +40,7 @@ def get_ticket_filters(
             assignee=assignee,
             created_by_id=created_by_id,
             q=q,
+            sla_status=sla_status,
             created_from=created_from,
             created_to=created_to,
         )

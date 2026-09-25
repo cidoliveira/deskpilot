@@ -10,7 +10,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.models.enums import TicketPriority, TicketStatus
+from app.models.enums import SlaStatus, TicketPriority, TicketStatus
 
 
 class TicketFilters(BaseModel):
@@ -28,6 +28,7 @@ class TicketFilters(BaseModel):
         Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
         | None
     ) = None
+    sla_status: SlaStatus | None = None
     created_from: date | None = None
     created_to: date | None = None
 

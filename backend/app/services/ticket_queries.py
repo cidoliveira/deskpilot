@@ -6,6 +6,7 @@ from sqlalchemy import Select, or_
 
 from app.models import Ticket, User
 from app.schemas.ticket_filters import TicketFilters
+from app.services import sla
 
 
 def _start_of_day(day: date) -> datetime:
@@ -18,7 +19,7 @@ def _contains(text: str) -> str:
     return f"%{escaped}%"
 
 
-def apply_filters(stmt: Select, filters: TicketFilters, user: User) -> Select:
+def apply_filters(stmt: Select, filters: TicketFilters, user: User, now: datetime) -> Select:
     if filters.status:
         stmt = stmt.where(Ticket.status.in_(filters.status))
     if filters.priority:
@@ -43,6 +44,8 @@ def apply_filters(stmt: Select, filters: TicketFilters, user: User) -> Select:
                 Ticket.description.ilike(pattern, escape="\\"),
             )
         )
+    if filters.sla_status is not None:
+        stmt = stmt.where(sla.sla_status_condition(filters.sla_status, now))
     if filters.created_from is not None:
         stmt = stmt.where(Ticket.created_at >= _start_of_day(filters.created_from))
     if filters.created_to is not None:

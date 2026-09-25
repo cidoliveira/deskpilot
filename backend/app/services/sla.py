@@ -1,8 +1,15 @@
-"""Resolution SLA per priority."""
+"""Resolution SLA per priority.
+
+`sla_status()` computes the status in Python (for responses) and `sla_status_condition()`
+expresses the same rule in SQL (for filtering). They must stay in sync; a test checks
+that both agree for every status.
+"""
 
 from datetime import datetime, timedelta
 
-from app.models import SlaStatus, TicketPriority, TicketStatus
+from sqlalchemy import ColumnElement, and_, func, literal, or_
+
+from app.models import SlaStatus, Ticket, TicketPriority, TicketStatus
 
 SLA_HOURS: dict[TicketPriority, int] = {
     TicketPriority.CRITICAL: 4,
@@ -36,3 +43,27 @@ def sla_status(
         return SlaStatus.BREACHED
     at_risk_from = created_at + (due - created_at) * AT_RISK_THRESHOLD
     return SlaStatus.AT_RISK if now >= at_risk_from else SlaStatus.ON_TRACK
+
+
+def sla_status_condition(target: SlaStatus, now: datetime) -> ColumnElement[bool]:
+    """SQL twin of `sla_status()`: tickets whose SLA status is `target` at `now`."""
+    now_ = literal(now)
+    resolved = Ticket.resolved_at.is_not(None)
+    unresolved = and_(Ticket.resolved_at.is_(None), Ticket.status != TicketStatus.CANCELLED)
+    # "At risk" point in epoch seconds: plain numbers can be multiplied by the threshold
+    # (multiplying an INTERVAL by a float is deprecated in SQLAlchemy).
+    created_s = func.extract("epoch", Ticket.created_at)
+    due_s = func.extract("epoch", Ticket.sla_due_at)
+    at_risk_from_s = created_s + (due_s - created_s) * AT_RISK_THRESHOLD
+    now_s = literal(now.timestamp())
+
+    conditions = {
+        SlaStatus.MET: and_(resolved, Ticket.resolved_at <= Ticket.sla_due_at),
+        SlaStatus.BREACHED: or_(
+            and_(resolved, Ticket.resolved_at > Ticket.sla_due_at),
+            and_(unresolved, now_ > Ticket.sla_due_at),
+        ),
+        SlaStatus.AT_RISK: and_(unresolved, now_ <= Ticket.sla_due_at, now_s >= at_risk_from_s),
+        SlaStatus.ON_TRACK: and_(unresolved, now_s < at_risk_from_s),
+    }
+    return conditions[target]
