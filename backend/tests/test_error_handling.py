@@ -4,7 +4,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.core.exceptions import BusinessRuleError, ConflictError, NotFoundError
+from app.core.exceptions import (
+    BusinessRuleError,
+    ConflictError,
+    NotFoundError,
+    UnauthorizedError,
+)
 
 
 @pytest.fixture
@@ -22,6 +27,10 @@ def error_client(app: FastAPI) -> TestClient:
     @app.get("/_test/business-rule")
     def raise_business_rule() -> None:
         raise BusinessRuleError("A resolution is required")
+
+    @app.get("/_test/unauthorized")
+    def raise_unauthorized() -> None:
+        raise UnauthorizedError("Invalid token", error="invalid_token")
 
     @app.get("/_test/crash")
     def crash() -> None:
@@ -57,6 +66,14 @@ def test_business_rule_error_uses_default_code(error_client: TestClient) -> None
         "error": "business_rule_violation",
         "message": "A resolution is required",
     }
+
+
+def test_unauthorized_error_tells_client_to_use_bearer_token(error_client: TestClient) -> None:
+    response = error_client.get("/_test/unauthorized")
+
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+    assert response.json()["error"] == "invalid_token"
 
 
 def test_unknown_route_uses_error_envelope(error_client: TestClient) -> None:

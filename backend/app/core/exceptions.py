@@ -8,6 +8,7 @@ Services raise these exceptions and never know about HTTP. The handlers register
 
 import logging
 from http import HTTPStatus
+from typing import ClassVar
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 class AppError(Exception):
     status_code: int = status.HTTP_400_BAD_REQUEST
     error: str = "bad_request"
+    headers: ClassVar[dict[str, str] | None] = None
 
     def __init__(self, message: str, *, error: str | None = None) -> None:
         super().__init__(message)
@@ -36,6 +38,8 @@ class NotFoundError(AppError):
 class UnauthorizedError(AppError):
     status_code = status.HTTP_401_UNAUTHORIZED
     error = "unauthorized"
+    # RFC 6750: 401 responses for bearer-token APIs must say how to authenticate.
+    headers: ClassVar[dict[str, str] | None] = {"WWW-Authenticate": "Bearer"}
 
 
 class PermissionDeniedError(AppError):
@@ -58,17 +62,21 @@ class BusinessRuleError(AppError):
 
 
 def error_response(
-    status_code: int, error: str, message: str, details: list[dict] | None = None
+    status_code: int,
+    error: str,
+    message: str,
+    details: list[dict] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     content: dict = {"error": error, "message": message}
     if details is not None:
         content["details"] = details
-    return JSONResponse(status_code=status_code, content=content)
+    return JSONResponse(status_code=status_code, content=content, headers=headers)
 
 
 async def _app_error_handler(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
-    return error_response(exc.status_code, exc.error, exc.message)
+    return error_response(exc.status_code, exc.error, exc.message, headers=exc.headers)
 
 
 async def _http_exception_handler(_: Request, exc: Exception) -> JSONResponse:
@@ -76,7 +84,7 @@ async def _http_exception_handler(_: Request, exc: Exception) -> JSONResponse:
     phrase = HTTPStatus(exc.status_code).phrase
     error = phrase.lower().replace(" ", "_").replace("-", "_")
     message = exc.detail if isinstance(exc.detail, str) else phrase
-    return error_response(exc.status_code, error, message)
+    return error_response(exc.status_code, error, message, headers=exc.headers)
 
 
 async def _validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
