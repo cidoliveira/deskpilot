@@ -1,5 +1,7 @@
 # DeskPilot
 
+[![CI](https://github.com/cidoliveira/deskpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/cidoliveira/deskpilot/actions/workflows/ci.yml)
+
 > Sistema de **Help Desk / Service Desk** para gestão de chamados internos de TI.
 > API REST em FastAPI + PostgreSQL, com frontend React (em desenvolvimento).
 
@@ -33,7 +35,8 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Comentários, bloqueados em tickets encerrados; a resposta do autor retoma um ticket em WAITING_USER |
 | ✅ | SLA por prioridade (no prazo, em risco, violado, cumprido) |
 | ✅ | Filtros (status, prioridade, categoria, técnico, autor, SLA, período), busca textual e ordenação |
-| ⏳ | Dashboard de métricas |
+| ✅ | Dashboard de métricas: volume, SLA, tempo médio de resolução e carga por técnico |
+| ✅ | CI no GitHub Actions: lint, validação de migrations e testes com cobertura mínima de 90% |
 | ⏳ | Frontend React |
 
 ## Arquitetura
@@ -126,6 +129,17 @@ docker compose exec api alembic check
 
 ## Testes
 
+Mais de 280 testes, com cobertura acima de 95%. Não testam só o caminho feliz; cobrem as
+regras de negócio, por exemplo:
+
+- usuário não enxerga ticket de outro usuário (404) e filtros nunca ampliam a visibilidade;
+- transições de status inválidas (409), ator errado (403), resolução sem texto ou sem técnico (422);
+- ticket fechado não aceita comentários nem edição;
+- toda atribuição, mudança de status e de prioridade gera evento no histórico;
+- dois técnicos assumindo o mesmo ticket ao mesmo tempo (duas transações reais);
+- a regra de SLA em SQL (filtros e dashboard) concorda com a regra em Python (respostas);
+- constraints do banco rejeitam dados inválidos mesmo inseridos por SQL direto.
+
 Os testes usam um banco PostgreSQL separado (`POSTGRES_TEST_DB`), criado automaticamente.
 O schema é montado **rodando as migrations**, o que também as valida, e cada teste roda em
 uma transação desfeita ao final.
@@ -174,6 +188,6 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
 - [x] **Etapa 5:** comentários
 - [x] **Etapa 6:** SLA, filtros, busca e ordenação
-- [ ] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
+- [x] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
 - [ ] **Etapa 8:** frontend React
 - [ ] **Etapa 9:** deploy
