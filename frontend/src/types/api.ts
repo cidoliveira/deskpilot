@@ -3,12 +3,7 @@
 export type UserRole = "USER" | "TECHNICIAN" | "ADMIN";
 
 export type TicketStatus =
-  | "OPEN"
-  | "IN_PROGRESS"
-  | "WAITING_USER"
-  | "RESOLVED"
-  | "CLOSED"
-  | "CANCELLED";
+  "OPEN" | "IN_PROGRESS" | "WAITING_USER" | "RESOLVED" | "CLOSED" | "CANCELLED";
 
 export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 

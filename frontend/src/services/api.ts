@@ -49,8 +49,7 @@ export const ticketsApi = {
   list: (params: TicketListParams) =>
     request<Page<TicketSummary>>("/tickets", { query: { ...params } }),
   get: (id: number) => request<TicketDetail>(`/tickets/${id}`),
-  create: (data: TicketInput) =>
-    request<TicketDetail>("/tickets", { method: "POST", json: data }),
+  create: (data: TicketInput) => request<TicketDetail>("/tickets", { method: "POST", json: data }),
   update: (id: number, data: Partial<TicketInput>) =>
     request<TicketDetail>(`/tickets/${id}`, { method: "PATCH", json: data }),
   setStatus: (id: number, status: TicketStatus, resolution?: string) =>
