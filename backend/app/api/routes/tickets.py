@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, DbSession, Pagination
 from app.api.ticket_params import TicketFilterParams
@@ -18,6 +20,7 @@ from app.schemas.ticket import (
 )
 from app.services import ticket_service, ticket_workflow_service
 from app.services.ticket_policy import allowed_actions
+from app.services.ticket_queries import DEFAULT_SORT, SORT_FIELDS, SORT_PATTERN
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -41,12 +44,19 @@ def list_tickets(
     current_user: CurrentUser,
     pagination: Pagination,
     filters: TicketFilterParams,
+    sort: Annotated[
+        str,
+        Query(
+            pattern=SORT_PATTERN,
+            description=f"One of {', '.join(SORT_FIELDS)}; prefix with - for descending",
+        ),
+    ] = DEFAULT_SORT,
 ) -> Page[TicketSummary]:
-    """Tickets visible to the current user, newest first.
+    """Tickets visible to the current user (newest first unless `sort` is given).
 
     USER: own tickets. TECHNICIAN: available + assigned + own. ADMIN: all.
     """
-    result = ticket_service.list_tickets(db, current_user, filters, pagination)
+    result = ticket_service.list_tickets(db, current_user, filters, pagination, sort)
     return Page[TicketSummary].model_validate(result)
 
 

@@ -82,12 +82,16 @@ def ensure_not_terminal(ticket: Ticket) -> None:
 
 
 def list_tickets(
-    session: Session, user: User, filters: TicketFilters, params: PageParams
+    session: Session,
+    user: User,
+    filters: TicketFilters,
+    params: PageParams,
+    sort: str = ticket_queries.DEFAULT_SORT,
 ) -> PageResult[Ticket]:
     # Visibility first, filters on top: filters can only narrow what the user may see.
     stmt = select(Ticket).where(visible_to(user)).options(*_RELATIONS)
     stmt = ticket_queries.apply_filters(stmt, filters, user, datetime.now(UTC))
-    stmt = stmt.order_by(Ticket.created_at.desc(), Ticket.id.desc())
+    stmt = ticket_queries.apply_sort(stmt, sort)
     return paginate(session, stmt, params)
 
 

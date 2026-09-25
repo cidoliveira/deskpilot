@@ -1,12 +1,34 @@
-"""SQL building blocks for the ticket list: filters (and, later, ordering)."""
+"""SQL building blocks for the ticket list: filters and ordering."""
 
 from datetime import UTC, date, datetime, time, timedelta
 
-from sqlalchemy import Select, or_
+from sqlalchemy import Select, case, or_
 
-from app.models import Ticket, User
+from app.models import Ticket, TicketPriority, User
 from app.schemas.ticket_filters import TicketFilters
 from app.services import sla
+
+# Priority sorted by severity, not alphabetically (VARCHAR column).
+_PRIORITY_RANK = case(
+    {
+        TicketPriority.LOW: 1,
+        TicketPriority.MEDIUM: 2,
+        TicketPriority.HIGH: 3,
+        TicketPriority.CRITICAL: 4,
+    },
+    value=Ticket.priority,
+)
+
+# Whitelist: only these fields can be used to sort (never raw user input in ORDER BY).
+SORT_FIELDS = {
+    "created_at": Ticket.created_at,
+    "updated_at": Ticket.updated_at,
+    "sla_due_at": Ticket.sla_due_at,
+    "priority": _PRIORITY_RANK,
+    "title": Ticket.title,
+}
+SORT_PATTERN = rf"^-?({'|'.join(SORT_FIELDS)})$"
+DEFAULT_SORT = "-created_at"
 
 
 def _start_of_day(day: date) -> datetime:
@@ -52,3 +74,12 @@ def apply_filters(stmt: Select, filters: TicketFilters, user: User, now: datetim
         # Inclusive end date: everything before the start of the next day.
         stmt = stmt.where(Ticket.created_at < _start_of_day(filters.created_to + timedelta(days=1)))
     return stmt
+
+
+def apply_sort(stmt: Select, sort: str) -> Select:
+    """`field` ascending, `-field` descending. The id breaks ties so pages are stable."""
+    descending = sort.startswith("-")
+    column = SORT_FIELDS[sort.removeprefix("-")]
+    if descending:
+        return stmt.order_by(column.desc(), Ticket.id.desc())
+    return stmt.order_by(column.asc(), Ticket.id.asc())
