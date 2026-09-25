@@ -31,7 +31,8 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Histórico auditável de todas as mudanças, gravado na mesma transação |
 | ✅ | `allowed_actions`: a API informa ao frontend o que o usuário pode fazer em cada ticket |
 | ✅ | Comentários, bloqueados em tickets encerrados; a resposta do autor retoma um ticket em WAITING_USER |
-| ⏳ | SLA por prioridade, filtros, busca, paginação e ordenação |
+| ✅ | SLA por prioridade (no prazo, em risco, violado, cumprido) |
+| ✅ | Filtros (status, prioridade, categoria, técnico, autor, SLA, período), busca textual e ordenação |
 | ⏳ | Dashboard de métricas |
 | ⏳ | Frontend React |
 
@@ -139,6 +140,19 @@ uv sync
 uv run pytest --cov
 ```
 
+## Exemplos de uso
+
+```bash
+# chamados do técnico logado, em andamento, mais urgentes primeiro
+GET /api/v1/tickets?assignee=me&status=IN_PROGRESS&sort=-priority
+
+# chamados abertos fora do SLA
+GET /api/v1/tickets?sla_status=BREACHED&status=OPEN&status=IN_PROGRESS
+
+# busca textual em março
+GET /api/v1/tickets?q=vpn&created_from=2026-03-01&created_to=2026-03-31
+```
+
 ## Documentação da API
 
 Gerada automaticamente pelo FastAPI (OpenAPI 3) em `/api/v1/docs`.
@@ -159,7 +173,7 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 3:** categorias e tickets (visibilidade por role, paginação)
 - [x] **Etapa 4:** workflow (atribuição, status, prioridade) e histórico
 - [x] **Etapa 5:** comentários
-- [ ] **Etapa 6:** SLA, filtros, busca e ordenação
+- [x] **Etapa 6:** SLA, filtros, busca e ordenação
 - [ ] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
 - [ ] **Etapa 8:** frontend React
 - [ ] **Etapa 9:** deploy

@@ -149,9 +149,33 @@ Outras decisões do workflow:
 | MEDIUM | 24 h |
 | LOW | 48 h |
 
-`sla_due_at = created_at + prazo`, recalculado quando a prioridade muda. O status é calculado:
-`AT_RISK` quando 80% da janela foi consumida; `MET`/`BREACHED` para tickets resolvidos
-comparando `resolved_at`. Tickets CANCELLED não entram no SLA.
+`sla_due_at = created_at + prazo`, gravado e indexado, recalculado a partir de `created_at`
+quando a prioridade muda. O status é calculado na hora da consulta, nunca gravado:
+
+| Status | Regra |
+|---|---|
+| `ON_TRACK` | aberto, menos de 80% da janela consumida |
+| `AT_RISK` | aberto, 80% ou mais da janela consumida, ainda no prazo |
+| `BREACHED` | aberto e vencido, **ou** resolvido depois do prazo |
+| `MET` | resolvido dentro do prazo |
+| `null` | CANCELLED (fora das métricas de SLA) |
+
+A regra existe **duas vezes**: `sla_status()` em Python (para a resposta) e
+`sla_status_condition()` em SQL (para o filtro `?sla_status=`). Um teste garante, para cada
+status, que os tickets devolvidos pelo filtro SQL têm exatamente esse status calculado.
+
+A migration que criou `sla_due_at` roda em três passos (coluna nula → backfill por
+prioridade → NOT NULL), para funcionar numa tabela já populada.
+
+### Listagem
+
+- Filtros: `status` e `priority` (repetíveis), `category_id`, `assignee` (`me`, `none` ou id),
+  `created_by_id`, `sla_status`, `q` (título/descrição), `created_from`/`created_to`
+  (datas inclusivas, UTC).
+- Os filtros são aplicados **depois** de `visible_to()`: só estreitam o resultado.
+- `q` usa `ILIKE` com `%` e `_` escapados (casam literalmente).
+- `sort` aceita só uma lista fixa de campos (`-` para decrescente); prioridade é ordenada por
+  gravidade via `CASE`, e o id desempata para a paginação ser estável.
 
 ## 4. API
 
