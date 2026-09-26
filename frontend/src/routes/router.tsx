@@ -1,7 +1,5 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "../components/AppLayout";
-import { AdminPage } from "../pages/AdminPage";
-import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 import { MyTicketsPage } from "../pages/MyTicketsPage";
 import { NewTicketPage } from "../pages/NewTicketPage";
@@ -29,8 +27,18 @@ export const router = createBrowserRouter([
           {
             element: <RequireRole roles={["ADMIN"]} />,
             children: [
-              { path: "dashboard", element: <DashboardPage /> },
-              { path: "admin", element: <AdminPage /> },
+              // Admin-only screens are split into their own chunks: most people never
+              // open them, so they don't download that code.
+              {
+                path: "dashboard",
+                lazy: async () => ({
+                  Component: (await import("../pages/DashboardPage")).DashboardPage,
+                }),
+              },
+              {
+                path: "admin",
+                lazy: async () => ({ Component: (await import("../pages/AdminPage")).AdminPage }),
+              },
             ],
           },
           {
