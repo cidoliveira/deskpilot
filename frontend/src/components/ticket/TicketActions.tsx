@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAssign, useChangePriority, useChangeStatus } from "../../hooks/mutations";
 import { useStaff } from "../../hooks/queries";
-import { PRIORITIES, PRIORITY_LABEL, TRANSITION_LABEL } from "../../lib/labels";
+import { PRIORITIES, PRIORITY_LABEL, STATUS_LABEL, TRANSITION_LABEL } from "../../lib/labels";
 import type { TicketDetail, TicketPriority, TicketStatus, User } from "../../types/api";
 import { Button, ErrorBanner } from "../ui";
 
@@ -26,6 +26,8 @@ export function TicketActions({ ticket, currentUser }: TicketActionsProps) {
   const [pending, setPending] = useState<TicketStatus | null>(null); // needs confirmation
   const [resolution, setResolution] = useState("");
   const [assignee, setAssignee] = useState("");
+  // Confirmation of the last action, announced politely to screen readers too.
+  const [notice, setNotice] = useState("");
 
   const error = changeStatus.error ?? assign.error ?? changePriority.error;
   const nothingToDo =
@@ -34,16 +36,30 @@ export function TicketActions({ ticket, currentUser }: TicketActionsProps) {
     !actions.can_change_priority &&
     actions.allowed_transitions.length === 0;
 
+  const announcement = (
+    <p role="status" aria-live="polite" className="text-sm text-sla-ok-text empty:hidden">
+      {notice}
+    </p>
+  );
+
   if (nothingToDo) {
-    return <p className="text-sm text-ink-soft">Nenhuma ação disponível para você agora.</p>;
+    return (
+      <div className="space-y-2">
+        {announcement}
+        <p className="text-sm text-ink-soft">Nenhuma ação disponível para você agora.</p>
+      </div>
+    );
   }
+
+  const statusChanged = (status: TicketStatus) => () =>
+    setNotice(`Status alterado para ${STATUS_LABEL[status]}.`);
 
   function move(status: TicketStatus) {
     if (status === "RESOLVED" || status === "CANCELLED") {
       setPending(status); // ask for the resolution / a confirmation first
       return;
     }
-    changeStatus.mutate({ status });
+    changeStatus.mutate({ status }, { onSuccess: statusChanged(status) });
   }
 
   function confirmPending() {
@@ -52,19 +68,29 @@ export function TicketActions({ ticket, currentUser }: TicketActionsProps) {
     if (pending === "RESOLVED" && text.length < 10) return;
     changeStatus.mutate(
       { status: pending, resolution: pending === "RESOLVED" ? text : undefined },
-      { onSuccess: () => setPending(null) },
+      {
+        onSuccess: () => {
+          setPending(null);
+          statusChanged(pending)();
+        },
+      },
     );
   }
 
   return (
     <div className="space-y-4">
+      {announcement}
       <ErrorBanner error={error} />
 
       {actions.can_claim && (
         <Button
           className="w-full"
           busy={assign.isPending}
-          onClick={() => assign.mutate(currentUser.id)}
+          onClick={() =>
+            assign.mutate(currentUser.id, {
+              onSuccess: () => setNotice("Você assumiu o chamado."),
+            })
+          }
         >
           Assumir chamado
         </Button>
@@ -162,7 +188,14 @@ export function TicketActions({ ticket, currentUser }: TicketActionsProps) {
             variant="secondary"
             disabled={!assignee}
             busy={assign.isPending}
-            onClick={() => assign.mutate(Number(assignee), { onSuccess: () => setAssignee("") })}
+            onClick={() =>
+              assign.mutate(Number(assignee), {
+                onSuccess: (updated) => {
+                  setAssignee("");
+                  setNotice(`Chamado atribuído a ${updated.assigned_to?.name ?? "técnico"}.`);
+                },
+              })
+            }
           >
             Atribuir
           </Button>
@@ -175,7 +208,11 @@ export function TicketActions({ ticket, currentUser }: TicketActionsProps) {
           <select
             value={ticket.priority}
             disabled={changePriority.isPending}
-            onChange={(event) => changePriority.mutate(event.target.value as TicketPriority)}
+            onChange={(event) =>
+              changePriority.mutate(event.target.value as TicketPriority, {
+                onSuccess: () => setNotice("Prioridade alterada; o prazo de SLA foi recalculado."),
+              })
+            }
             className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm focus:border-accent focus:outline-none"
           >
             {PRIORITIES.map((value) => (

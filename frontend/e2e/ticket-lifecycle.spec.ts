@@ -44,7 +44,8 @@ test("a ticket goes from opened to closed, with every step on record", async ({
   await page.getByLabel("O que resolveu o problema?").fill("Cabo HDMI substituído.");
   await page.getByRole("button", { name: "Marcar como resolvido" }).click();
   await expect(page.getByText("Cabo HDMI substituído.")).toBeVisible();
-  await expect(page.getByText("Cumprido", { exact: true })).toBeVisible();
+  await expect(page.getByText("Resolvido no prazo")).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Status alterado para Resolvido.");
   await signOut(page);
 
   // 3. The user confirms the solution; the ticket closes and stops accepting messages.

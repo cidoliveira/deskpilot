@@ -100,6 +100,7 @@ describe("TicketActions", () => {
       status: "RESOLVED",
       resolution: "Perfil da VPN recriado.",
     });
+    expect(await screen.findByRole("status")).toHaveTextContent("Status alterado para Resolvido.");
   });
 
   it("asks for confirmation before cancelling", async () => {
