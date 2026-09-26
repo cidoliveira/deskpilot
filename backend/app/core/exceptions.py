@@ -104,15 +104,19 @@ def _field_name(loc: tuple) -> str:
     return ".".join(str(part) for part in loc)
 
 
+def _field_detail(err: dict) -> dict:
+    detail: dict = {"field": _field_name(err["loc"]), "message": err["msg"], "type": err["type"]}
+    # Simple constraint values (e.g. min_length) let clients write their own message;
+    # non-JSON values such as the original exception are left out.
+    ctx = {k: v for k, v in (err.get("ctx") or {}).items() if isinstance(v, int | float | str)}
+    if ctx:
+        detail["ctx"] = ctx
+    return detail
+
+
 async def _validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    details = [
-        {
-            "field": _field_name(err["loc"]),
-            "message": err["msg"],
-        }
-        for err in exc.errors()
-    ]
+    details = [_field_detail(err) for err in exc.errors()]
     return error_response(
         status.HTTP_422_UNPROCESSABLE_CONTENT, "validation_error", "Invalid request", details
     )

@@ -8,6 +8,15 @@ from pydantic import BaseModel, Field
 class FieldError(BaseModel):
     field: str = Field(examples=["title"])
     message: str = Field(examples=["String should have at least 5 characters"])
+    type: str = Field(
+        description="Stable validation code (Pydantic error type), for client-side messages.",
+        examples=["string_too_short"],
+    )
+    ctx: dict[str, int | float | str] | None = Field(
+        default=None,
+        description="Constraint values, e.g. {'min_length': 5}.",
+        examples=[{"min_length": 5}],
+    )
 
 
 class ErrorRead(BaseModel):

@@ -1,7 +1,9 @@
 """The API must answer every error with the same envelope and never leak internals."""
 
+from typing import Annotated
+
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.testclient import TestClient
 
 from app.core.exceptions import (
@@ -39,6 +41,10 @@ def error_client(app: FastAPI) -> TestClient:
     @app.get("/_test/validation")
     def validated(page: int) -> dict[str, int]:
         return {"page": page}
+
+    @app.get("/_test/too-short")
+    def too_short(name: Annotated[str, Query(min_length=3)]) -> dict[str, str]:
+        return {"name": name}
 
     # raise_server_exceptions=False: behave like a real server instead of re-raising.
     return TestClient(app, raise_server_exceptions=False)
@@ -97,6 +103,15 @@ def test_validation_error_lists_invalid_fields(error_client: TestClient) -> None
     assert response.status_code == 422
     assert body["error"] == "validation_error"
     assert body["details"][0]["field"] == "page"
+
+
+def test_validation_details_carry_type_and_constraints(error_client: TestClient) -> None:
+    response = error_client.get("/_test/too-short", params={"name": "ab"})
+
+    [detail] = response.json()["details"]
+    assert detail["field"] == "name"
+    assert detail["type"] == "string_too_short"
+    assert detail["ctx"] == {"min_length": 3}
 
 
 def test_unexpected_error_does_not_leak_details(error_client: TestClient) -> None:
