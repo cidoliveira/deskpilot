@@ -294,6 +294,10 @@ o texto usa versões escuras das mesmas cores (≥ 4,5:1).
 - **Limite de tentativas de login:** janela deslizante por (IP, e-mail); depois de 5 falhas em
   15 minutos, `429` com `Retry-After`. Por IP **e** e-mail para não permitir que um estranho
   bloqueie a conta de alguém a partir de outro lugar.
+  O IP vem de um `X-Forwarded-For` que o Nginx **sobrescreve** (não concatena) e que o uvicorn só
+  aceita vindo do endereço fixo do Nginx na rede interna. Sem isso, bastaria forjar o header a
+  cada tentativa para ganhar tentativas infinitas (achado da revisão de segurança final; o CI
+  agora testa exatamente esse ataque).
 - O job *Production stack* do CI sobe essa pilha com o `.env.example` e faz um smoke test
   através do Nginx. Guia passo a passo em [deploy.md](deploy.md).
 
