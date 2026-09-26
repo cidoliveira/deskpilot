@@ -54,6 +54,16 @@ class ConflictError(AppError):
     error = "conflict"
 
 
+class TooManyRequestsError(AppError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    error = "too_many_requests"
+
+    def __init__(self, message: str, *, retry_after: int) -> None:
+        super().__init__(message)
+        # Instance-level header: tells well-behaved clients when to try again.
+        self.headers = {"Retry-After": str(retry_after)}  # type: ignore[misc]
+
+
 class BusinessRuleError(AppError):
     """The request is well formed but breaks a business rule (e.g. resolution missing)."""
 

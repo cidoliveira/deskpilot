@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUser, DbSession
@@ -19,9 +19,16 @@ def register(data: UserRegister, db: DbSession) -> UserRead:
 
 
 @router.post("/login", response_model=TokenRead)
-def login(form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession) -> TokenRead:
-    """OAuth2 password flow: send `username` (the e-mail) and `password` as form data."""
-    return auth_service.login(db, form.username, form.password)
+def login(
+    form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession, request: Request
+) -> TokenRead:
+    """OAuth2 password flow: send `username` (the e-mail) and `password` as form data.
+
+    After too many failed attempts from the same client for the same e-mail, returns 429
+    with a `Retry-After` header.
+    """
+    client = request.client.host if request.client else "unknown"
+    return auth_service.login(db, form.username, form.password, client=client)
 
 
 @router.get("/me", response_model=UserRead)

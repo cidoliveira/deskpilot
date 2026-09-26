@@ -10,7 +10,14 @@ from app.core.security import (
 )
 from app.models import User
 from app.schemas.auth import TokenRead
+from app.services.login_throttle import LoginThrottle
 from app.services.user_service import get_user_by_email
+
+_settings = get_settings()
+login_throttle = LoginThrottle(
+    max_failures=_settings.login_max_failures,
+    window_seconds=_settings.login_window_minutes * 60,
+)
 
 
 def _invalid_credentials() -> UnauthorizedError:
@@ -31,8 +38,16 @@ def authenticate(session: Session, email: str, password: str) -> User:
     return user
 
 
-def login(session: Session, email: str, password: str) -> TokenRead:
-    user = authenticate(session, email, password)
+def login(session: Session, email: str, password: str, *, client: str) -> TokenRead:
+    """`client` identifies the caller (its IP) for brute-force protection."""
+    key = f"{client}|{email.strip().lower()}"
+    login_throttle.check(key)
+    try:
+        user = authenticate(session, email, password)
+    except UnauthorizedError:
+        login_throttle.record_failure(key)
+        raise
+    login_throttle.reset(key)
     settings = get_settings()
     return TokenRead(
         access_token=create_access_token(str(user.id)),

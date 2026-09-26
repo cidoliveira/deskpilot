@@ -21,6 +21,7 @@ from alembic import command
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.main import create_app
+from app.services.auth_service import login_throttle
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -89,3 +90,11 @@ def app(db_session: Session):
 def client(app) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture(autouse=True)
+def _reset_login_throttle() -> Iterator[None]:
+    """Failed logins from one test must not lock out the next one."""
+    login_throttle.reset()
+    yield
+    login_throttle.reset()

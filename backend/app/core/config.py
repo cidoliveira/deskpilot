@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = Field(min_length=32)
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = Field(default=60, ge=1)
+    # Brute-force protection: failed logins allowed per (IP, e-mail) within the window.
+    login_max_failures: int = Field(default=5, ge=1)
+    login_window_minutes: int = Field(default=15, ge=1)
 
     # Optional: when set, `python -m app.scripts.create_admin` creates this admin account.
     first_admin_email: EmailStr | None = None
