@@ -207,6 +207,16 @@ jobs:
           curl -sf localhost:8080/api/v1/auth/me -H "Authorization: Bearer $token" | jq -e '.role == "ADMIN"'
           # The seven default categories come from the data migration.
           curl -sf localhost:8080/api/v1/categories -H "Authorization: Bearer $token" | jq -e 'length == 7'
+          # The login throttle keys on the real client IP: a forged X-Forwarded-For per
+          # attempt must not buy new tries (5 failures, then 429).
+          login=localhost:8080/api/v1/auth/login
+          for i in 1 2 3 4 5; do
+            curl -s -o /dev/null -X POST "$login" -H "X-Forwarded-For: 203.0.113.$i" \
+              -d "username=admin@deskpilot.dev&password=wrong-$i"
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$login" \
+            -H "X-Forwarded-For: 198.51.100.7" -d "username=admin@deskpilot.dev&password=wrong")
+          test "$code" = "429"
           # The API and the database are not published outside the Compose network.
           ! curl -s --max-time 2 localhost:8000/api/v1/health
           ! (echo > /dev/tcp/localhost/5432) 2>/dev/null
