@@ -8,14 +8,16 @@ import { NewTicketPage } from "../pages/NewTicketPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { QueuePage } from "../pages/QueuePage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { RouteErrorPage } from "../pages/RouteErrorPage";
 import { TicketDetailPage } from "../pages/TicketDetailPage";
 import { HomeRedirect, RequireAuth, RequireRole } from "./guards";
 
 export const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
+  { path: "/login", element: <LoginPage />, errorElement: <RouteErrorPage /> },
+  { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorPage /> },
   {
     element: <RequireAuth />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <AppLayout />,
