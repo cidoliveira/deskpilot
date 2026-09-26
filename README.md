@@ -3,10 +3,12 @@
 [![CI](https://github.com/cidoliveira/deskpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/cidoliveira/deskpilot/actions/workflows/ci.yml)
 
 > Sistema de **Help Desk / Service Desk** para gestão de chamados internos de TI.
-> API REST em FastAPI + PostgreSQL, com frontend React (em desenvolvimento).
+> API REST em FastAPI + PostgreSQL e interface em React + TypeScript.
 
 🇺🇸 *An IT Help Desk / Service Desk web app for internal tickets: FastAPI REST API with
 role-based access, auditable ticket history, SLA tracking and a React frontend.*
+
+![Detalhe de um chamado em risco de SLA](docs/screenshots/ticket.png)
 
 ---
 
@@ -37,7 +39,8 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | Filtros (status, prioridade, categoria, técnico, autor, SLA, período), busca textual e ordenação |
 | ✅ | Dashboard de métricas: volume, SLA, tempo médio de resolução e carga por técnico |
 | ✅ | CI no GitHub Actions: lint, validação de migrations e testes com cobertura mínima de 90% |
-| ⏳ | Frontend React |
+| ✅ | Interface React em PT-BR: fila do técnico, detalhe com ações por perfil, painel e administração |
+| ✅ | Dados de demonstração criados pelo fluxo real (script de seed) |
 
 ## Arquitetura
 
@@ -53,11 +56,24 @@ backend/
 │   └── services/        # regras de negócio
 ├── alembic/             # migrations
 └── tests/
+
+frontend/src/
+├── auth/                # sessão (token + usuário atual via /auth/me)
+├── services/            # cliente HTTP tipado e contrato de erros da API
+├── hooks/               # queries e mutations (TanStack Query)
+├── routes/              # rotas e guardas por perfil
+├── components/          # SLA gauge, tabela, filtros, ações do ticket...
+├── pages/               # telas
+└── lib/                 # rótulos PT-BR, formatação, SLA
 ```
 
 As regras de negócio ficam na camada de **services**, que não conhece HTTP: ela lança exceções
 de domínio, convertidas em respostas padronizadas por handlers centrais.
 Modelo de domínio, regras e decisões técnicas estão em **[docs/arquitetura.md](docs/arquitetura.md)**.
+
+O frontend **não duplica regras de negócio**: cada ticket vem da API com `allowed_actions`
+(o que o usuário atual pode fazer), e a tela só desenha esses botões. A API continua validando
+tudo, então forçar uma URL ou uma requisição não burla nenhuma regra.
 
 ## Tecnologias
 
@@ -65,7 +81,8 @@ Modelo de domínio, regras e decisões técnicas estão em **[docs/arquitetura.m
 - **Testes:** Pytest, HTTPX (TestClient), banco PostgreSQL real e isolado
 - **Qualidade:** Ruff (lint + format)
 - **Infra:** Docker, Docker Compose, uv (gerenciador de pacotes)
-- **Frontend (planejado):** React, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query
+- **Frontend:** React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, TanStack Query
+- **Testes do frontend:** Vitest + Testing Library; oxlint e Prettier
 
 ## Como executar
 
@@ -82,6 +99,26 @@ docker compose up --build
 
 Ao subir, o container da API aplica as migrations e cria o admin inicial definido em
 `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` (se ainda não existir).
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 (o Vite encaminha /api para localhost:8000)
+```
+
+### Dados de demonstração
+
+```bash
+docker compose exec api python -m app.scripts.seed_demo
+```
+
+Cria dois técnicos, três usuários e nove chamados em todos os status e estados de SLA, passando
+pelos serviços reais (o histórico é verdadeiro). As contas usam a senha definida em
+`DEMO_PASSWORD`: `carla@deskpilot.dev` e `diego@deskpilot.dev` (técnicos),
+`ana@deskpilot.dev`, `bruno@deskpilot.dev` e `juliana@deskpilot.dev` (usuários).
+O script não roda com `ENVIRONMENT=production`.
 
 ### Autenticação
 
@@ -110,6 +147,7 @@ Técnicos e administradores são criados por um admin em `POST /api/v1/users`.
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Validade do token | `60` |
 | `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` | Admin criado no startup, se ainda não existir | opcional |
 | `FIRST_ADMIN_NAME` | Nome do admin inicial | `Administrator` |
+| `DEMO_PASSWORD` | Senha das contas de demonstração (`seed_demo`) | opcional |
 
 O arquivo `.env` nunca é versionado; apenas `.env.example`.
 
@@ -145,13 +183,17 @@ O schema é montado **rodando as migrations**, o que também as valida, e cada t
 uma transação desfeita ao final.
 
 ```bash
-# dentro do Docker
+# backend, dentro do Docker
 docker compose exec api pytest
 
 # ou localmente (com o banco do Compose rodando)
 cd backend
 uv sync
 uv run pytest --cov
+
+# frontend
+cd frontend
+npm test
 ```
 
 ## Exemplos de uso
@@ -178,7 +220,14 @@ Todos os erros seguem o mesmo formato:
 
 ## Screenshots
 
-*Em breve, junto com o frontend.*
+| | |
+|---|---|
+| **Fila de atendimento**: o prazo de SLA de cada chamado numa barra | **Painel do admin**: o que precisa de ação primeiro |
+| ![Fila](docs/screenshots/queue.png) | ![Painel](docs/screenshots/dashboard.png) |
+| **Abrir chamado**: a prioridade mostra o prazo que ela significa | **Login** |
+| ![Novo chamado](docs/screenshots/new-ticket.png) | ![Login](docs/screenshots/login.png) |
+
+<p align="center"><img src="docs/screenshots/mobile.png" alt="Chamado no celular" width="300"></p>
 
 ## Roadmap
 
@@ -189,5 +238,5 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 5:** comentários
 - [x] **Etapa 6:** SLA, filtros, busca e ordenação
 - [x] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
-- [ ] **Etapa 8:** frontend React
+- [x] **Etapa 8:** frontend React
 - [ ] **Etapa 9:** deploy
