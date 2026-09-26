@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { AppLayout } from "../components/AppLayout";
 import { LoginPage } from "../pages/LoginPage";
 import { MyTicketsPage } from "../pages/MyTicketsPage";
+import { NewTicketPage } from "../pages/NewTicketPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { QueuePage } from "../pages/QueuePage";
 import { RegisterPage } from "../pages/RegisterPage";
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <HomeRedirect /> },
           { path: "tickets", element: <MyTicketsPage /> },
+          { path: "tickets/new", element: <NewTicketPage /> },
           {
             element: <RequireRole roles={["TECHNICIAN", "ADMIN"]} />,
             children: [{ path: "queue", element: <QueuePage /> }],

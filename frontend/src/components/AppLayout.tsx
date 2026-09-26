@@ -33,45 +33,48 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
-      <aside className="flex flex-col bg-deck text-[#dfe6ef] lg:sticky lg:top-0 lg:h-screen">
-        <div className="flex items-center justify-between px-5 py-4 lg:py-6">
-          <Brand />
-          <button
-            type="button"
-            onClick={logout}
-            className="text-sm text-[#9fb0c8] hover:text-white lg:hidden"
-          >
-            Sair
-          </button>
-        </div>
-        <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end
-              className={({ isActive }) =>
-                `rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors ${
-                  isActive
-                    ? "bg-deck-hover font-medium text-white shadow-[inset_3px_0_0_var(--color-accent)]"
-                    : "text-[#b5c2d5] hover:bg-deck-hover hover:text-white"
-                }`
-              }
+      <aside className="bg-deck text-[#dfe6ef]">
+        {/* The column fills the page height; only the inner menu sticks while scrolling. */}
+        <div className="flex flex-col lg:sticky lg:top-0 lg:h-screen">
+          <div className="flex items-center justify-between px-5 py-4 lg:py-6">
+            <Brand />
+            <button
+              type="button"
+              onClick={logout}
+              className="text-sm text-[#9fb0c8] hover:text-white lg:hidden"
             >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto hidden border-t border-white/10 px-5 py-4 lg:block">
-          <p className="truncate text-sm font-medium text-white">{user.name}</p>
-          <p className="text-xs text-[#9fb0c8]">{ROLE_LABEL[user.role]}</p>
-          <button
-            type="button"
-            onClick={logout}
-            className="mt-3 text-sm text-[#9fb0c8] underline-offset-4 hover:text-white hover:underline"
-          >
-            Sair
-          </button>
+              Sair
+            </button>
+          </div>
+          <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col">
+            {items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+                    isActive
+                      ? "bg-deck-hover font-medium text-white shadow-[inset_3px_0_0_var(--color-accent)]"
+                      : "text-[#b5c2d5] hover:bg-deck-hover hover:text-white"
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="mt-auto hidden border-t border-white/10 px-5 py-4 lg:block">
+            <p className="truncate text-sm font-medium text-white">{user.name}</p>
+            <p className="text-xs text-[#9fb0c8]">{ROLE_LABEL[user.role]}</p>
+            <button
+              type="button"
+              onClick={logout}
+              className="mt-3 text-sm text-[#9fb0c8] underline-offset-4 hover:text-white hover:underline"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
       <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-10">
