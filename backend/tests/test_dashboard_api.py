@@ -26,7 +26,7 @@ def scenario(db_session: Session, admin: User) -> dict:
     printers = make_category(db_session, name="Print X")
 
     def resolved(tech: User, hours_to_resolve: float, priority=TicketPriority.HIGH) -> None:
-        created = now - timedelta(days=1)
+        created = now - timedelta(days=3)
         make_ticket(
             db_session,
             created_by=user,
@@ -119,11 +119,14 @@ def test_workload_by_technician(client: TestClient, admin: User, scenario: dict)
 
 
 def test_date_range_limits_the_metrics(client: TestClient, admin: User, scenario: dict) -> None:
-    today = datetime.now(UTC).date()
+    # Independent of the time the test runs: recent tickets (at most 7 h old) are always on
+    # or after yesterday's date, and the resolved ones (3 days old) are always before it.
+    # (Using "today" failed right after midnight UTC, when 5 h ago was already yesterday.)
+    yesterday = (datetime.now(UTC) - timedelta(days=1)).date()
 
-    metrics = _metrics(client, admin, created_from=today.isoformat())
+    metrics = _metrics(client, admin, created_from=yesterday.isoformat())
 
-    assert metrics["total"] == 4  # the three resolved tickets were created yesterday
+    assert metrics["total"] == 4
     assert metrics["avg_resolution_hours"] is None
     assert metrics["sla"]["compliance_rate"] is None
 
