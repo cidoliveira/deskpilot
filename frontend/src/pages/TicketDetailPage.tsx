@@ -9,6 +9,7 @@ import { TicketActions } from "../components/ticket/TicketActions";
 import { TicketEditForm } from "../components/ticket/TicketEditForm";
 import { Button, Card, EmptyState, ErrorBanner, Spinner } from "../components/ui";
 import { useTicket, useTicketHistory } from "../hooks/queries";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { formatDateTime, ticketCode } from "../lib/format";
 import { ApiError } from "../services/http";
 
@@ -27,6 +28,7 @@ export function TicketDetailPage() {
   const ticketQuery = useTicket(id);
   const history = useTicketHistory(id);
   const [editing, setEditing] = useState(false);
+  usePageTitle(ticketQuery.data && `${ticketCode(id)} ${ticketQuery.data.title}`);
 
   if (ticketQuery.isPending) return <Spinner />;
   if (ticketQuery.error instanceof ApiError && ticketQuery.error.status === 404) {

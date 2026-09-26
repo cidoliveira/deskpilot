@@ -19,15 +19,19 @@ export function TicketListView({ list, preset = {}, showAuthor, empty }: TicketL
   const params = { ...list.apiParams, ...preset };
   if (list.apiParams.status) params.status = list.apiParams.status; // explicit filter wins
   const query = useTicketList(params);
+  // First use (nothing at all yet): an empty list needs no filter bar, just the next step.
+  const nothingYet = query.data?.total === 0 && !list.hasFilters && list.filters.page === 1;
 
   return (
     <Card>
-      <TicketFilters
-        filters={list.filters}
-        setFilter={list.setFilter}
-        clearFilters={list.clearFilters}
-        hasFilters={list.hasFilters}
-      />
+      {!nothingYet && (
+        <TicketFilters
+          filters={list.filters}
+          setFilter={list.setFilter}
+          clearFilters={list.clearFilters}
+          hasFilters={list.hasFilters}
+        />
+      )}
       {query.isPending && <Spinner />}
       {query.isError && (
         <div className="p-4">

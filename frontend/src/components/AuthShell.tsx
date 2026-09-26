@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { Brand } from "./AppLayout";
 
 /** Two-panel frame for login and sign-up: the deck on the left, the form on the right. */
 export function AuthShell({ title, children }: { title: string; children: ReactNode }) {
+  usePageTitle(title);
   return (
     <div className="min-h-screen md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <div className="flex flex-col justify-between bg-deck px-8 py-8 text-[#dfe6ef] md:px-12 md:py-12">

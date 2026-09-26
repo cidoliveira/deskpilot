@@ -20,7 +20,7 @@ export function MyTicketsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Acompanhamento" title="Meus chamados" actions={newTicketLink} />
+      <PageHeader eyebrow="Acompanhamento" title="Meus chamados" />
       <TicketListView
         list={list}
         preset={{ created_by_id: user.id }}

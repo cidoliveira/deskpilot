@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { errorMessage } from "../lib/errors";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -55,6 +56,7 @@ export function PageHeader({
   eyebrow?: string;
   actions?: ReactNode;
 }) {
+  usePageTitle(title);
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
