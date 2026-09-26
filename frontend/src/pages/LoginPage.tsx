@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import { AuthShell } from "../components/AuthShell";
 import { TextField } from "../components/fields";
@@ -7,13 +7,14 @@ import { Button, ErrorBanner } from "../components/ui";
 
 export function LoginPage() {
   const { user, login } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
   const from = (location.state as { from?: string } | null)?.from ?? "/";
+  // Signed in (now or already): the one place that decides where to go, so the page the
+  // visitor asked for before logging in is not lost to a race with another redirect.
+  if (user) return <Navigate to={from} replace />;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,7 +23,6 @@ export function LoginPage() {
     setError(null);
     try {
       await login(String(form.get("email")), String(form.get("password")));
-      navigate(from, { replace: true });
     } catch (err) {
       setError(err);
       setSubmitting(false);
