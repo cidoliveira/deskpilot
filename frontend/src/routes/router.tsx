@@ -6,6 +6,7 @@ import { NewTicketPage } from "../pages/NewTicketPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { QueuePage } from "../pages/QueuePage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { TicketDetailPage } from "../pages/TicketDetailPage";
 import { HomeRedirect, RequireAuth, RequireRole } from "./guards";
 
 export const router = createBrowserRouter([
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
           { index: true, element: <HomeRedirect /> },
           { path: "tickets", element: <MyTicketsPage /> },
           { path: "tickets/new", element: <NewTicketPage /> },
+          { path: "tickets/:id", element: <TicketDetailPage /> },
           {
             element: <RequireRole roles={["TECHNICIAN", "ADMIN"]} />,
             children: [{ path: "queue", element: <QueuePage /> }],
