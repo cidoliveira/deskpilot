@@ -40,6 +40,14 @@ export function TicketFilters({
 }: TicketFiltersProps) {
   const categories = useCategories();
   const [search, setSearch] = useState(filters.q);
+  const [syncedQ, setSyncedQ] = useState(filters.q);
+
+  // The URL can change `q` from outside (clear filters, back button): follow it, unless it
+  // is just the debounced version of what is being typed (don't eat a trailing space).
+  if (filters.q !== syncedQ) {
+    setSyncedQ(filters.q);
+    if (filters.q !== search.trim()) setSearch(filters.q);
+  }
 
   // Search as you type, but only after a short pause (one request, not one per key).
   useEffect(() => {
@@ -125,10 +133,7 @@ export function TicketFilters({
       {hasFilters && (
         <button
           type="button"
-          onClick={() => {
-            setSearch("");
-            clearFilters();
-          }}
+          onClick={clearFilters}
           className="pb-2 text-sm text-accent hover:underline"
         >
           Limpar filtros
