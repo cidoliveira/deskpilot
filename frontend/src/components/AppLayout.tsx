@@ -46,7 +46,10 @@ export function AppLayout() {
               Sair
             </button>
           </div>
-          <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col">
+          <nav
+            aria-label="Principal"
+            className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-3 pb-3 lg:flex-col"
+          >
             {items.map((item) => (
               <NavLink
                 key={item.to}

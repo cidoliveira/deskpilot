@@ -22,13 +22,13 @@ export function TicketTable({ tickets, showAuthor = true }: TicketTableProps) {
             <th scope="col" className="label-caps hidden px-3 py-3 font-semibold lg:table-cell">
               Prioridade
             </th>
-            <th scope="col" className="label-caps px-3 py-3 font-semibold">
+            <th scope="col" className="label-caps hidden px-3 py-3 font-semibold sm:table-cell">
               Status
             </th>
             <th scope="col" className="label-caps hidden px-3 py-3 font-semibold md:table-cell">
               Responsável
             </th>
-            <th scope="col" className="label-caps px-4 py-3 font-semibold">
+            <th scope="col" className="label-caps hidden px-4 py-3 font-semibold sm:table-cell">
               SLA
             </th>
           </tr>
@@ -47,17 +47,27 @@ export function TicketTable({ tickets, showAuthor = true }: TicketTableProps) {
                     {showAuthor && ` · ${ticket.created_by.name}`} · {timeAgo(ticket.created_at)}
                   </span>
                 </Link>
+                {/* On phones the row becomes a card: status and SLA move under the title. */}
+                <div className="mt-2 flex items-start justify-between gap-3 sm:hidden">
+                  <StatusBadge status={ticket.status} />
+                  <SlaGauge
+                    status={ticket.sla_status}
+                    createdAt={ticket.created_at}
+                    dueAt={ticket.sla_due_at}
+                    resolvedAt={ticket.resolved_at}
+                  />
+                </div>
               </td>
               <td className="hidden px-3 py-3 lg:table-cell">
                 <PriorityBadge priority={ticket.priority} />
               </td>
-              <td className="px-3 py-3">
+              <td className="hidden px-3 py-3 sm:table-cell">
                 <StatusBadge status={ticket.status} />
               </td>
               <td className="hidden px-3 py-3 text-ink-soft md:table-cell">
                 {ticket.assigned_to?.name ?? <span className="text-ink-faint">Sem técnico</span>}
               </td>
-              <td className="px-4 py-3">
+              <td className="hidden px-4 py-3 sm:table-cell">
                 <SlaGauge
                   status={ticket.sla_status}
                   createdAt={ticket.created_at}
