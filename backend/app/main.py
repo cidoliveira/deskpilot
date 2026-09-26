@@ -1,9 +1,10 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
-from app.core.config import API_V1_PREFIX, get_settings
+from app.core.config import API_V1_PREFIX, Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 
 DESCRIPTION = """
@@ -13,8 +14,8 @@ All errors share the same format: `{"error": "<code>", "message": "<text>"}`.
 """
 
 
-def create_app() -> FastAPI:
-    settings = get_settings()
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or get_settings()
     logging.basicConfig(
         level=settings.log_level,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
@@ -28,6 +29,15 @@ def create_app() -> FastAPI:
         redoc_url=f"{API_V1_PREFIX}/redoc",
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
+    if settings.cors_origin_list:
+        # Only needed when the frontend is served from another domain. Bearer tokens are
+        # sent in a header, not cookies, so credentials are not allowed.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origin_list,
+            allow_methods=["GET", "POST", "PUT", "PATCH"],
+            allow_headers=["Authorization", "Content-Type"],
+        )
     register_exception_handlers(app)
     app.include_router(api_router)
     return app

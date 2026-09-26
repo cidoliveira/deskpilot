@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     app_name: str = "DeskPilot API"
     environment: Environment = Environment.DEVELOPMENT
     log_level: str = "INFO"
+    # Comma-separated origins allowed to call the API from a browser. Empty = same origin
+    # only (the default setup: Vite proxy in development, Nginx in production).
+    cors_origins: str = ""
 
     postgres_host: str = "localhost"
     postgres_port: int = 5432
@@ -50,6 +53,10 @@ class Settings(BaseSettings):
 
     # Optional: password of the demo accounts created by `python -m app.scripts.seed_demo`.
     demo_password: SecretStr | None = None
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     def _postgres_url(self, database: str) -> URL:
         # URL.create escapes special characters in the password, unlike string formatting.
