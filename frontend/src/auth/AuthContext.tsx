@@ -12,6 +12,7 @@ import { AuthContext, ME_QUERY_KEY, type AuthContextValue } from "./useAuth";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [token, setToken] = useState(() => tokenStorage.get());
+  const [signedOut, setSignedOut] = useState(false);
 
   const me = useQuery({
     queryKey: ME_QUERY_KEY,
@@ -21,14 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: 5 * 60_000,
   });
 
-  const logout = useCallback(() => {
-    tokenStorage.clear();
-    setToken(null);
-    queryClient.clear(); // no data from the previous session survives
-  }, [queryClient]);
+  const endSession = useCallback(
+    (manual: boolean) => {
+      tokenStorage.clear();
+      setToken(null);
+      setSignedOut(manual);
+      queryClient.clear(); // no data from the previous session survives
+    },
+    [queryClient],
+  );
+  const logout = useCallback(() => endSession(true), [endSession]);
 
-  // Any authenticated request answered with 401 (expired token, deactivated user) logs out.
-  useEffect(() => setUnauthorizedHandler(logout), [logout]);
+  // Any authenticated request answered with 401 (expired token, deactivated user) ends the
+  // session too, but keeps the page, so the same person can sign in and continue.
+  useEffect(() => setUnauthorizedHandler(() => endSession(false)), [endSession]);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -36,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.set(access_token);
       try {
         await queryClient.fetchQuery({ queryKey: ME_QUERY_KEY, queryFn: authApi.me });
+        setSignedOut(false);
       } catch (error) {
         // Login failed halfway (e.g. network error): don't leave a session behind that a
         // page refresh would silently resume.
@@ -53,8 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: token !== null && me.isPending,
       login,
       logout,
+      signedOut,
     }),
-    [token, me.data, me.isPending, login, logout],
+    [token, me.data, me.isPending, login, logout, signedOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

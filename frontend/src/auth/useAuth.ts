@@ -7,6 +7,8 @@ export interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  /** True after the user clicked "Sair" (not when the session expired). */
+  signedOut: boolean;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

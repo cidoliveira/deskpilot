@@ -3,13 +3,17 @@ import { useAuth } from "../auth/useAuth";
 import { Spinner } from "../components/ui";
 import type { UserRole } from "../types/api";
 
-/** Screens for logged-in users only; remembers where the user wanted to go. */
+/** Screens for logged-in users only. Remembers the page to return to after signing in,
+ *  except after "Sair": the next person to log in must not land on someone else's page. */
 export function RequireAuth() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, signedOut } = useAuth();
   const location = useLocation();
 
   if (isLoading) return <Spinner label="Verificando sessão…" />;
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!user) {
+    const from = location.pathname + location.search;
+    return <Navigate to="/login" replace state={signedOut ? undefined : { from }} />;
+  }
   return <Outlet />;
 }
 

@@ -107,3 +107,18 @@ describe("RegisterPage", () => {
     });
   });
 });
+
+describe("signing out", () => {
+  it("does not send the next person to the previous user's page", async () => {
+    const user = userEvent.setup();
+    const { router } = renderApp("/tickets", {
+      user: ana,
+      api: { "GET /tickets": page([]), "GET /categories": [] },
+    });
+
+    await user.click((await screen.findAllByRole("button", { name: "Sair" }))[0]);
+
+    expect(await screen.findByRole("heading", { name: "Entrar" })).toBeInTheDocument();
+    expect(router.state.location.state).toBeNull();
+  });
+});
