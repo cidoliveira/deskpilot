@@ -2,9 +2,9 @@
 
 from datetime import UTC, date, datetime, time, timedelta
 
-from sqlalchemy import Select, case, or_
+from sqlalchemy import Select, and_, case, or_
 
-from app.models import Ticket, TicketPriority, User
+from app.models import Ticket, TicketPriority, TicketStatus, User
 from app.schemas.ticket_filters import TicketFilters
 from app.services import sla
 
@@ -77,10 +77,22 @@ def apply_filters(stmt: Select, filters: TicketFilters, user: User, now: datetim
     return stmt
 
 
+# Tickets whose SLA clock is still running (not resolved, not cancelled) come first.
+_CLOCK_STOPPED = case(
+    (and_(Ticket.resolved_at.is_(None), Ticket.status != TicketStatus.CANCELLED), 0), else_=1
+)
+
+
 def apply_sort(stmt: Select, sort: str) -> Select:
-    """`field` ascending, `-field` descending. The id breaks ties so pages are stable."""
+    """`field` ascending, `-field` descending. The id breaks ties so pages are stable.
+
+    Sorting by SLA due date means "most urgent first": finished tickets have old due dates
+    but no urgency, so they go after every ticket whose clock is still running.
+    """
+    field = sort.removeprefix("-")
     descending = sort.startswith("-")
-    column = SORT_FIELDS[sort.removeprefix("-")]
-    if descending:
-        return stmt.order_by(column.desc(), Ticket.id.desc())
-    return stmt.order_by(column.asc(), Ticket.id.asc())
+    column = SORT_FIELDS[field]
+    order = [column.desc(), Ticket.id.desc()] if descending else [column.asc(), Ticket.id.asc()]
+    if field == "sla_due_at":
+        order.insert(0, _CLOCK_STOPPED.asc())
+    return stmt.order_by(*order)
