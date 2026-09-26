@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, type RouteObject } from "react-router";
 import { AppLayout } from "../components/AppLayout";
 import { LoginPage } from "../pages/LoginPage";
 import { MyTicketsPage } from "../pages/MyTicketsPage";
@@ -10,7 +10,8 @@ import { RouteErrorPage } from "../pages/RouteErrorPage";
 import { TicketDetailPage } from "../pages/TicketDetailPage";
 import { HomeRedirect, RequireAuth, RequireRole } from "./guards";
 
-export const router = createBrowserRouter([
+/** Route table, shared by the browser router and the page tests (memory router). */
+export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage />, errorElement: <RouteErrorPage /> },
   { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorPage /> },
   {
@@ -50,4 +51,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);
