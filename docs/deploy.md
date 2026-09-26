@@ -5,7 +5,7 @@ cada push (job *Production stack*) e testa, através do Nginx, o app, os headers
 o login do admin e as migrations — então os passos abaixo são os mesmos que o CI executa.
 
 ```
-Internet ──HTTPS──▶ proxy com TLS ──▶ web (Nginx) ──/api──▶ api (FastAPI, 2 workers) ──▶ db
+Internet ──HTTPS──▶ proxy com TLS ──▶ web (Nginx) ──/api──▶ api (FastAPI) ──▶ db
                                         └─ arquivos do React
 ```
 

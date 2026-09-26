@@ -283,7 +283,9 @@ o texto usa versões escuras das mesmas cores (≥ 4,5:1).
 ### Produção
 
 - `backend/Dockerfile` tem dois alvos: `dev` (todas as dependências, migrations no startup) e
-  `prod` (só dependências de runtime, 2 workers do uvicorn atrás do proxy).
+  `prod` (só dependências de runtime, atrás do proxy). Um processo do uvicorn por padrão: o
+  limite de login guarda os contadores na memória do processo, então N processos dariam N vezes
+  mais tentativas. Escalar para vários processos pede um contador compartilhado (Redis).
 - `frontend/Dockerfile` gera o build com Node e serve com Nginx, que também faz proxy de
   `/api` para a API: frontend e API na **mesma origem**, sem CORS. Cache de um ano para os
   arquivos com hash, `no-cache` para o `index.html`, gzip e headers de segurança (CSP,

@@ -46,5 +46,8 @@ USER app
 # uvicorn). The safe default trusts nobody but localhost; docker-compose.prod.yml sets
 # it to the Nginx container's fixed address on the internal network.
 ENV FORWARDED_ALLOW_IPS=127.0.0.1
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", \
-     "--workers", "2", "--proxy-headers"]
+# One process by default (uvicorn reads WEB_CONCURRENCY): the login throttle keeps its
+# counters in process memory, so with N workers an attacker would get N times the tries.
+# Sync endpoints still run in a thread pool. More processes need a shared store (Redis).
+ENV WEB_CONCURRENCY=1
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

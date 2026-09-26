@@ -1,6 +1,6 @@
 # Production-like stack: docker compose -f docker-compose.prod.yml up -d --build
 #
-#   web (Nginx: React build + /api proxy)  ->  api (FastAPI, 2 workers)  ->  db
+#   web (Nginx: React build + /api proxy)  ->  api (FastAPI)  ->  db
 #
 # Differences from the development docker-compose.yml:
 # - images without dev dependencies, no source bind mounts, no auto-reload
