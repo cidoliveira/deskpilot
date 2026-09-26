@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router";
 import type { TicketListParams } from "../services/api";
+import { PRIORITIES, SLA_STATUSES, STATUSES } from "../lib/labels";
 import type { TicketPriority, TicketStatus } from "../types/api";
 
 /** Filters that live in the URL, so a filtered list can be reloaded or shared as a link. */
@@ -14,6 +15,17 @@ export interface ListFilters {
 }
 
 const FILTER_KEYS = ["q", "status", "priority", "category_id", "sla_status", "sort"] as const;
+
+function nonEmpty<T>(values: T[]): T[] | undefined {
+  return values.length > 0 ? values : undefined;
+}
+
+/** Keep only the values the API knows: URLs are user-editable (and links get shared). */
+function known<T extends string>(raw: string, allowed: readonly T[]): T[] {
+  return raw
+    .split(",")
+    .filter((value): value is T => (allowed as readonly string[]).includes(value));
+}
 
 export function useListParams(defaultSort = "-created_at") {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +42,7 @@ export function useListParams(defaultSort = "-created_at") {
 
   /** Change one filter; any filter change goes back to page 1. */
   function setFilter(key: (typeof FILTER_KEYS)[number] | "page", value: string) {
+    if ((searchParams.get(key) ?? "") === value) return; // unchanged: keep the current page
     setSearchParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -61,10 +74,10 @@ export function useListParams(defaultSort = "-created_at") {
     page_size: 15,
     q: filters.q || undefined,
     // Comma-separated, so one URL value can mean "any active status".
-    status: filters.status ? (filters.status.split(",") as TicketStatus[]) : undefined,
-    priority: filters.priority ? [filters.priority as TicketPriority] : undefined,
-    category_id: filters.category_id ? Number(filters.category_id) : undefined,
-    sla_status: filters.sla_status || undefined,
+    status: nonEmpty(known<TicketStatus>(filters.status, STATUSES)),
+    priority: nonEmpty(known<TicketPriority>(filters.priority, PRIORITIES)),
+    category_id: Number(filters.category_id) || undefined,
+    sla_status: known(filters.sla_status, SLA_STATUSES)[0],
     sort: filters.sort,
   };
 
