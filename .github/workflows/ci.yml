@@ -228,3 +228,38 @@ jobs:
       - name: Stop
         if: always()
         run: docker compose -f docker-compose.prod.yml down -v
+
+  dev-stack:
+    name: Development stack (docker compose up, as in the README)
+    runs-on: ubuntu-latest
+    needs: [backend]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: docker compose up
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+
+      - name: Wait for the API
+        run: timeout 120 bash -c 'until curl -sf localhost:8000/api/v1/health; do sleep 2; done'
+
+      - name: Swagger and the first admin are there
+        run: |
+          set -euo pipefail
+          curl -sf localhost:8000/api/v1/docs | grep -q swagger
+          curl -sf -X POST localhost:8000/api/v1/auth/login \
+            -d "username=admin@deskpilot.dev&password=change-me-admin" | jq -e '.access_token'
+
+      - name: Demo data and the test suite inside the container
+        run: |
+          docker compose exec -T api python -m app.scripts.seed_demo
+          docker compose exec -T api pytest -q -p no:cacheprovider
+
+      - name: Show logs when something fails
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop
+        if: always()
+        run: docker compose down -v
