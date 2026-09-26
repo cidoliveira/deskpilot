@@ -45,12 +45,19 @@ describe("request", () => {
     mockFetch(422, {
       error: "validation_error",
       message: "Invalid request",
-      details: [{ field: "title", message: "String should have at least 5 characters" }],
+      details: [
+        {
+          field: "title",
+          message: "String should have at least 5 characters",
+          type: "string_too_short",
+          ctx: { min_length: 5 },
+        },
+      ],
     });
 
     const error = (await request("/tickets").catch((e: unknown) => e)) as ApiError;
 
-    expect(error.fieldError("title")).toContain("at least 5");
+    expect(error.fieldError("title")).toBe("Use pelo menos 5 caracteres.");
     expect(error.fieldError("description")).toBeUndefined();
   });
 

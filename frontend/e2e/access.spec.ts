@@ -36,3 +36,14 @@ test("wrong credentials are explained in the interface language", async ({ page 
 
   await expect(page.getByRole("alert")).toHaveText("E-mail ou senha incorretos.");
 });
+
+test("form validation speaks the interface language", async ({ page }) => {
+  await page.goto("/register");
+  await page.getByLabel("E-mail corporativo").fill("sem-arroba");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+
+  await expect(page.getByText("Use pelo menos 2 caracteres.")).toBeVisible();
+  await expect(page.getByText("Informe um e-mail válido, como nome@empresa.com.")).toBeVisible();
+  await expect(page.getByText("Use pelo menos 8 caracteres.")).toBeVisible();
+  await expect(page.getByText(/String should|valid email/)).toHaveCount(0);
+});

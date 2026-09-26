@@ -1,3 +1,4 @@
+import { fieldMessage } from "../lib/validation";
 import type { ApiErrorBody } from "../types/api";
 
 const API_BASE = "/api/v1";
@@ -17,9 +18,10 @@ export class ApiError extends Error {
     this.details = body.details;
   }
 
-  /** Validation message for one field, if the API reported one. */
+  /** Validation message for one field (in PT-BR), if the API reported one. */
   fieldError(field: string): string | undefined {
-    return this.details?.find((detail) => detail.field === field)?.message;
+    const detail = this.details?.find((item) => item.field === field);
+    return detail && fieldMessage(detail);
   }
 }
 

@@ -125,5 +125,12 @@ export interface DashboardMetrics {
 export interface ApiErrorBody {
   error: string;
   message: string;
-  details?: { field: string; message: string }[];
+  details?: {
+    field: string;
+    message: string;
+    /** Stable validation code, e.g. "string_too_short". */
+    type?: string;
+    /** Constraint values, e.g. { min_length: 8 }. */
+    ctx?: Record<string, number | string>;
+  }[];
 }
