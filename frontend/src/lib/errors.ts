@@ -5,6 +5,7 @@ const MESSAGES: Record<string, string> = {
   invalid_credentials: "E-mail ou senha incorretos.",
   user_inactive: "Sua conta está desativada. Procure o administrador.",
   token_expired: "Sua sessão expirou. Entre novamente.",
+  too_many_requests: "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.",
   email_already_registered: "Já existe uma conta com este e-mail.",
   permission_denied: "Você não tem permissão para esta ação.",
   ticket_not_found: "Chamado não encontrado.",
