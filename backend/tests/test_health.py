@@ -30,3 +30,14 @@ def test_openapi_docs_are_published(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["info"]["title"] == "DeskPilot API"
+
+
+def test_openapi_documents_the_error_envelope(client: TestClient) -> None:
+    spec = client.get("/api/v1/openapi.json").json()
+    status_change = spec["paths"]["/api/v1/tickets/{ticket_id}/status"]["patch"]["responses"]
+
+    assert {"401", "403", "404", "409", "422"} <= set(status_change)
+    assert status_change["409"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ErrorRead"
+    }
+    assert "429" in spec["paths"]["/api/v1/auth/login"]["post"]["responses"]

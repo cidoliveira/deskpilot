@@ -5,9 +5,12 @@ from fastapi import APIRouter, Query
 
 from app.api.deps import AdminUser, DbSession
 from app.schemas.dashboard import DashboardMetrics
+from app.schemas.errors import error_responses
 from app.services import dashboard_service
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(
+    prefix="/dashboard", tags=["dashboard"], responses=error_responses(401, 403, 422)
+)
 
 
 @router.get("/metrics", response_model=DashboardMetrics)

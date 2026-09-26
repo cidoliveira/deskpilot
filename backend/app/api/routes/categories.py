@@ -3,9 +3,12 @@ from fastapi import APIRouter, status
 from app.api.deps import AdminUser, CurrentUser, DbSession
 from app.models import UserRole
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
+from app.schemas.errors import error_responses
 from app.services import category_service
 
-router = APIRouter(prefix="/categories", tags=["categories"])
+router = APIRouter(
+    prefix="/categories", tags=["categories"], responses=error_responses(401, 403, 422)
+)
 
 
 @router.get("", response_model=list[CategoryRead])

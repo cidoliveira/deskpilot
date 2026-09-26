@@ -3,10 +3,11 @@ from fastapi import APIRouter, status
 from app.api.deps import AdminUser, DbSession, Pagination
 from app.models import UserRole
 from app.schemas.common import Page
+from app.schemas.errors import error_responses
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services import user_service
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["users"], responses=error_responses(401, 403, 422))
 
 
 @router.get("", response_model=Page[UserRead])

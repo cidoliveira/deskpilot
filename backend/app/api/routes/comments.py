@@ -2,9 +2,14 @@ from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession
 from app.schemas.comment import CommentCreate, CommentRead
+from app.schemas.errors import error_responses
 from app.services import comment_service
 
-router = APIRouter(prefix="/tickets/{ticket_id}/comments", tags=["comments"])
+router = APIRouter(
+    prefix="/tickets/{ticket_id}/comments",
+    tags=["comments"],
+    responses=error_responses(401, 404, 409, 422),
+)
 
 
 @router.get("", response_model=list[CommentRead])

@@ -5,20 +5,26 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUser, DbSession
 from app.schemas.auth import TokenRead
+from app.schemas.errors import error_responses
 from app.schemas.user import UserRead, UserRegister
 from app.services import auth_service, user_service
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"], responses=error_responses(422))
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    responses=error_responses(409),
+)
 def register(data: UserRegister, db: DbSession) -> UserRead:
     """Create a regular USER account. Technicians and admins are created by an admin."""
     user = user_service.register_user(db, data)
     return UserRead.model_validate(user)
 
 
-@router.post("/login", response_model=TokenRead)
+@router.post("/login", response_model=TokenRead, responses=error_responses(401, 403, 429))
 def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession, request: Request
 ) -> TokenRead:
@@ -31,6 +37,6 @@ def login(
     return auth_service.login(db, form.username, form.password, client=client)
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserRead, responses=error_responses(401))
 def me(current_user: CurrentUser) -> UserRead:
     return UserRead.model_validate(current_user)

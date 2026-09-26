@@ -6,6 +6,7 @@ from app.api.deps import CurrentUser, DbSession, Pagination
 from app.api.ticket_params import TicketFilterParams
 from app.models import Ticket, User
 from app.schemas.common import Page
+from app.schemas.errors import error_responses
 from app.schemas.history import TicketEventRead
 from app.schemas.ticket import (
     TicketActionsRead,
@@ -22,7 +23,9 @@ from app.services import ticket_service, ticket_workflow_service
 from app.services.ticket_policy import allowed_actions
 from app.services.ticket_queries import DEFAULT_SORT, SORT_FIELDS, SORT_PATTERN
 
-router = APIRouter(prefix="/tickets", tags=["tickets"])
+router = APIRouter(
+    prefix="/tickets", tags=["tickets"], responses=error_responses(401, 403, 404, 409, 422)
+)
 
 
 def _detail(ticket: Ticket, user: User) -> TicketDetail:

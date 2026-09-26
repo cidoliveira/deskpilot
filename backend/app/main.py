@@ -10,8 +10,30 @@ from app.core.exceptions import register_exception_handlers
 DESCRIPTION = """
 DeskPilot is an internal IT Help Desk / Service Desk API.
 
-All errors share the same format: `{"error": "<code>", "message": "<text>"}`.
+**Authentication:** use *Authorize* with your e-mail and password (OAuth2 password flow),
+or send `Authorization: Bearer <token>` obtained from `POST /auth/login`.
+
+**Roles:** `USER` opens and follows own tickets; `TECHNICIAN` works the queue; `ADMIN` sees
+everything and manages users, categories and metrics. Every single-ticket response includes
+`allowed_actions` for the current user.
+
+**Errors** always share one format: `{"error": "<code>", "message": "<text>"}` (plus
+`details` for validation errors). Branch on `error`; `message` is for humans.
 """
+
+TAGS = [
+    {"name": "auth", "description": "Sign up, log in and the current user."},
+    {
+        "name": "tickets",
+        "description": "Tickets, their workflow (status, assignee, "
+        "priority) and audit history. Results are limited to what the caller may see.",
+    },
+    {"name": "comments", "description": "Conversation on a ticket."},
+    {"name": "categories", "description": "Ticket categories (managed by admins)."},
+    {"name": "users", "description": "User management (admins only)."},
+    {"name": "dashboard", "description": "Service desk metrics (admins only)."},
+    {"name": "health", "description": "Liveness and database check."},
+]
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -25,6 +47,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         description=DESCRIPTION,
+        openapi_tags=TAGS,
         docs_url=f"{API_V1_PREFIX}/docs",
         redoc_url=f"{API_V1_PREFIX}/redoc",
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
