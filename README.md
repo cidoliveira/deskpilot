@@ -38,7 +38,7 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | SLA por prioridade (no prazo, em risco, violado, cumprido) |
 | ✅ | Filtros (status, prioridade, categoria, técnico, autor, SLA, período), busca textual e ordenação |
 | ✅ | Dashboard de métricas: volume, SLA, tempo médio de resolução e carga por técnico |
-| ✅ | CI no GitHub Actions: lint, validação de migrations e testes com cobertura mínima de 90% |
+| ✅ | CI no GitHub Actions: lint, migrations (ida e volta), testes com piso de cobertura, e2e e as pilhas Docker |
 | ✅ | Interface React em PT-BR: fila do técnico, detalhe com ações por perfil, painel e administração |
 | ✅ | Dados de demonstração criados pelo fluxo real (script de seed) |
 | ✅ | Limite de tentativas de login (429 + `Retry-After`) por IP e e-mail |
@@ -81,7 +81,7 @@ tudo, então forçar uma URL ou uma requisição não burla nenhuma regra.
 ## Tecnologias
 
 - **Backend:** Python 3.13, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2, PostgreSQL 17
-- **Testes:** Pytest, HTTPX (TestClient), banco PostgreSQL real e isolado
+- **Testes:** Pytest, TestClient (httpx2), banco PostgreSQL real e isolado
 - **Qualidade:** Ruff (lint + format)
 - **Infra:** Docker, Docker Compose, uv (gerenciador de pacotes)
 - **Frontend:** React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, TanStack Query
@@ -93,7 +93,7 @@ tudo, então forçar uma URL ou uma requisição não burla nenhuma regra.
 Pré-requisitos: Docker e Docker Compose.
 
 ```bash
-cp .env.example .env        # ajuste POSTGRES_PASSWORD
+cp .env.example .env        # funciona como está para desenvolvimento
 docker compose up --build
 ```
 
