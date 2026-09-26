@@ -1,4 +1,4 @@
-import { type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useUpdateTicket } from "../../hooks/mutations";
 import { useCategories } from "../../hooks/queries";
 import type { TicketDetail } from "../../types/api";
@@ -13,6 +13,9 @@ interface TicketEditFormProps {
 export function TicketEditForm({ ticket, onDone }: TicketEditFormProps) {
   const categories = useCategories();
   const update = useUpdateTicket(ticket.id);
+  // Controlled on purpose: with defaultValue, the options arriving after the form opened
+  // made the browser select the first category, silently changing it on save.
+  const [categoryId, setCategoryId] = useState(ticket.category.id);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,7 +24,7 @@ export function TicketEditForm({ ticket, onDone }: TicketEditFormProps) {
       {
         title: String(form.get("title")).trim(),
         description: String(form.get("description")).trim(),
-        category_id: Number(form.get("category_id")),
+        category_id: categoryId,
       },
       { onSuccess: onDone },
     );
@@ -31,7 +34,12 @@ export function TicketEditForm({ ticket, onDone }: TicketEditFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <ErrorBanner error={update.error} />
       <TextField label="Resumo" name="title" defaultValue={ticket.title} maxLength={200} />
-      <SelectField label="Categoria" name="category_id" defaultValue={ticket.category.id}>
+      <SelectField
+        label="Categoria"
+        name="category_id"
+        value={categoryId}
+        onChange={(event) => setCategoryId(Number(event.target.value))}
+      >
         {/* Keep the current category listed even if it was deactivated meanwhile. */}
         {!categories.data?.some((category) => category.id === ticket.category.id) && (
           <option value={ticket.category.id}>{ticket.category.name}</option>
