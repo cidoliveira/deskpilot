@@ -17,15 +17,21 @@ interface SlaGaugeProps {
   size?: "row" | "panel";
 }
 
-function caption(status: SlaStatus, remainingMs: number, resolved: boolean): string {
-  if (status === "MET") return "Resolvido no prazo";
+/** Full sentence for the detail panel; `compact` for table rows, where space is short. */
+function caption(
+  status: SlaStatus,
+  remainingMs: number,
+  resolved: boolean,
+  compact: boolean,
+): string {
+  const time = formatDuration(remainingMs);
+  if (status === "MET") return compact ? "Cumprido" : "Resolvido no prazo";
   if (status === "BREACHED") {
     // remainingMs is measured at resolution time for resolved tickets (the clock stopped).
-    return resolved
-      ? `Resolvido com ${formatDuration(remainingMs)} de atraso`
-      : `Vencido há ${formatDuration(remainingMs)}`;
+    if (resolved) return compact ? `${time} de atraso` : `Resolvido com ${time} de atraso`;
+    return `Vencido há ${time}`;
   }
-  return `Vence em ${formatDuration(remainingMs)}`;
+  return `Vence em ${time}`;
 }
 
 /**
@@ -40,7 +46,7 @@ export function SlaGauge({ status, createdAt, dueAt, resolvedAt, size = "row" }:
   const { fraction, remainingMs } = slaProgress(createdAt, dueAt, resolvedAt);
   const tone = TONE[status];
   const percent = Math.round(fraction * 100);
-  const text = caption(status, remainingMs, resolvedAt !== null);
+  const text = caption(status, remainingMs, resolvedAt !== null, size === "row");
 
   if (size === "panel") {
     return (

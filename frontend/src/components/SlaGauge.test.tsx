@@ -35,8 +35,22 @@ describe("SlaGauge", () => {
       />,
     );
 
-    expect(screen.getByText("Resolvido com 3 h de atraso")).toBeInTheDocument();
+    expect(screen.getByText("3 h de atraso")).toBeInTheDocument(); // compact, in a table row
     expect(screen.queryByText(/Vencido/)).not.toBeInTheDocument();
+  });
+
+  it("uses the full sentence in the detail panel", () => {
+    render(
+      <SlaGauge
+        status="BREACHED"
+        createdAt={hoursAgo(30)}
+        dueAt={hoursAgo(22)}
+        resolvedAt={hoursAgo(19)}
+        size="panel"
+      />,
+    );
+
+    expect(screen.getByText("Resolvido com 3 h de atraso")).toBeInTheDocument();
   });
 
   it("says when a ticket was resolved on time", () => {
