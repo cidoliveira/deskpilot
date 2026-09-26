@@ -32,19 +32,19 @@ export function AppLayout() {
   const items = NAV.filter((item) => item.roles.includes(user.role));
 
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[232px_1fr]">
-      <aside className="flex flex-col bg-deck text-[#dfe6ef] md:sticky md:top-0 md:h-screen">
-        <div className="flex items-center justify-between px-5 py-4 md:py-6">
+    <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
+      <aside className="flex flex-col bg-deck text-[#dfe6ef] lg:sticky lg:top-0 lg:h-screen">
+        <div className="flex items-center justify-between px-5 py-4 lg:py-6">
           <Brand />
           <button
             type="button"
             onClick={logout}
-            className="text-sm text-[#9fb0c8] hover:text-white md:hidden"
+            className="text-sm text-[#9fb0c8] hover:text-white lg:hidden"
           >
             Sair
           </button>
         </div>
-        <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col">
+        <nav aria-label="Principal" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col">
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -62,7 +62,7 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto hidden border-t border-white/10 px-5 py-4 md:block">
+        <div className="mt-auto hidden border-t border-white/10 px-5 py-4 lg:block">
           <p className="truncate text-sm font-medium text-white">{user.name}</p>
           <p className="text-xs text-[#9fb0c8]">{ROLE_LABEL[user.role]}</p>
           <button
@@ -74,7 +74,7 @@ export function AppLayout() {
           </button>
         </div>
       </aside>
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-10">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-10">
         <Outlet />
       </main>
     </div>
