@@ -99,3 +99,78 @@ jobs:
 
       - name: Type check and build
         run: npm run build
+
+  e2e:
+    name: End-to-end (browser → API → PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: deskpilot
+          POSTGRES_PASSWORD: deskpilot
+          POSTGRES_DB: deskpilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U deskpilot"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    # Throwaway values for a disposable CI database: not real secrets.
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: deskpilot
+      POSTGRES_PASSWORD: deskpilot
+      POSTGRES_DB: deskpilot
+      JWT_SECRET_KEY: ci-only-signing-key-not-used-anywhere-else
+      FIRST_ADMIN_EMAIL: admin@deskpilot.dev
+      FIRST_ADMIN_PASSWORD: ci-admin-password
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.10.4"
+          enable-cache: true
+
+      - name: Start the API (migrations, first admin, uvicorn)
+        working-directory: backend
+        run: |
+          uv sync --frozen
+          uv run alembic upgrade head
+          uv run python -m app.scripts.create_admin
+          nohup uv run uvicorn app.main:app --port 8000 > ../api.log 2>&1 &
+          timeout 30 bash -c 'until curl -sf localhost:8000/api/v1/health; do sleep 1; done'
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend and browser
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Keep the report and API log when something fails
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            api.log
+          retention-days: 7
