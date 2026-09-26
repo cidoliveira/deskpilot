@@ -94,8 +94,8 @@ jobs:
           npm run lint
           npm run format:check
 
-      - name: Tests
-        run: npm test
+      - name: Tests (with coverage floor)
+        run: npm run test:coverage
 
       - name: Type check and build
         run: npm run build

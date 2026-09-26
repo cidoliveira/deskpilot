@@ -19,5 +19,11 @@ export default defineConfig({
     css: false,
     // Playwright specs live in e2e/ and run with `npm run test:e2e`.
     include: ["src/**/*.test.{ts,tsx}"],
+    coverage: {
+      include: ["src/**"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/main.tsx"],
+      // Same floor as the backend; CI fails below it.
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },
+    },
   },
 });
