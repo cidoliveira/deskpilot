@@ -5,11 +5,17 @@ interface PaginationProps {
   pages: number;
   total: number;
   onChange: (page: number) => void;
+  /** Plural noun for what is being counted, e.g. "usuários". */
+  noun?: string;
 }
 
-export function Pagination({ page, pages, total, onChange }: PaginationProps) {
+export function Pagination({ page, pages, total, onChange, noun = "chamados" }: PaginationProps) {
   if (pages <= 1) {
-    return <p className="px-4 py-3 text-xs text-ink-soft">{total} chamado(s)</p>;
+    return (
+      <p className="px-4 py-3 text-xs text-ink-soft">
+        {total} {noun}
+      </p>
+    );
   }
   return (
     <nav
@@ -17,7 +23,7 @@ export function Pagination({ page, pages, total, onChange }: PaginationProps) {
       className="flex items-center justify-between border-t border-line px-4 py-3"
     >
       <p className="text-xs text-ink-soft">
-        {total} chamados · página <span className="font-mono">{page}</span> de{" "}
+        {total} {noun} · página <span className="font-mono">{page}</span> de{" "}
         <span className="font-mono">{pages}</span>
       </p>
       <div className="flex gap-2">

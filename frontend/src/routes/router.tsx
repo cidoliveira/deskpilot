@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "../components/AppLayout";
+import { AdminPage } from "../pages/AdminPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 import { MyTicketsPage } from "../pages/MyTicketsPage";
@@ -25,7 +26,10 @@ export const router = createBrowserRouter([
           { path: "tickets/:id", element: <TicketDetailPage /> },
           {
             element: <RequireRole roles={["ADMIN"]} />,
-            children: [{ path: "dashboard", element: <DashboardPage /> }],
+            children: [
+              { path: "dashboard", element: <DashboardPage /> },
+              { path: "admin", element: <AdminPage /> },
+            ],
           },
           {
             element: <RequireRole roles={["TECHNICIAN", "ADMIN"]} />,
