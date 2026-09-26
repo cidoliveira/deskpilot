@@ -59,7 +59,7 @@ test("admin screens have no detectable accessibility violations", async ({ page 
   await expectNoViolations(page, "dashboard");
 
   await page.goto("/admin");
-  await expect(page.getByRole("table")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Usuários" })).toBeVisible();
   await expectNoViolations(page, "admin users");
   await page.goto("/admin?tab=categories");
   await expect(page.getByText("Nova categoria")).toBeVisible();
@@ -79,4 +79,29 @@ test("keyboard users can skip the menu", async ({ page, request }) => {
 
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
+});
+
+test("every screen fits a phone without sideways scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill(process.env.FIRST_ADMIN_EMAIL ?? "");
+  await page.getByLabel("Senha").fill(process.env.FIRST_ADMIN_PASSWORD ?? "");
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page.getByRole("heading", { name: "Painel do service desk" })).toBeVisible();
+
+  for (const path of [
+    "/dashboard",
+    "/queue?view=all",
+    "/tickets",
+    "/tickets/new",
+    "/admin",
+    "/admin?tab=categories",
+  ]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, `${path} is ${overflow}px wider than the phone`).toBeLessThanOrEqual(0);
+  }
 });
