@@ -33,6 +33,13 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
+      {/* First focusable element: keyboard users can jump over the menu on every page. */}
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-surface px-3 py-2 text-sm font-medium text-ink focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Pular para o conteúdo
+      </a>
       <aside className="bg-deck text-[#dfe6ef]">
         {/* The column fills the page height; only the inner menu sticks while scrolling. */}
         <div className="flex flex-col lg:sticky lg:top-0 lg:h-screen">
@@ -80,7 +87,11 @@ export function AppLayout() {
           </div>
         </div>
       </aside>
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:px-8 lg:py-10">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl px-4 py-6 focus:outline-none lg:px-8 lg:py-10"
+      >
         <Outlet />
       </main>
     </div>

@@ -65,3 +65,18 @@ test("admin screens have no detectable accessibility violations", async ({ page 
   await expect(page.getByText("Nova categoria")).toBeVisible();
   await expectNoViolations(page, "admin categories");
 });
+
+test("keyboard users can skip the menu", async ({ page, request }) => {
+  const user = await createAccount(request, "USER", `Teclado ${Date.now()}`);
+  await signIn(page, user);
+  await page.goto("/tickets");
+  await expect(page.getByRole("heading", { name: "Meus chamados" })).toBeVisible();
+
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "Pular para o conteúdo" });
+  await expect(skip).toBeFocused();
+  await expect(skip).toBeVisible();
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main")).toBeFocused();
+});
