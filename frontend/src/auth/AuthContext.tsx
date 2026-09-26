@@ -34,7 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const { access_token } = await authApi.login(email, password);
       tokenStorage.set(access_token);
-      await queryClient.fetchQuery({ queryKey: ME_QUERY_KEY, queryFn: authApi.me });
+      try {
+        await queryClient.fetchQuery({ queryKey: ME_QUERY_KEY, queryFn: authApi.me });
+      } catch (error) {
+        // Login failed halfway (e.g. network error): don't leave a session behind that a
+        // page refresh would silently resume.
+        tokenStorage.clear();
+        throw error;
+      }
       setToken(access_token);
     },
     [queryClient],
