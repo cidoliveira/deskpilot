@@ -185,8 +185,14 @@ docker compose exec api alembic check
 
 ## Testes
 
-Cerca de 300 testes no backend (cobertura acima de 95%), 38 no frontend e 7 fluxos
-end-to-end no navegador. Não testam só o caminho feliz; cobrem as regras de negócio, por exemplo:
+| Camada | Testes | Cobertura |
+|---|---|---|
+| Backend (Pytest, PostgreSQL real) | ~300 | 98% |
+| Frontend (Vitest + Testing Library, telas inteiras com API simulada) | 81 | 93% |
+| End-to-end (Playwright: navegador → API → banco) | 9 fluxos | — |
+
+O CI falha abaixo de 90% no backend e 80% no frontend. Os testes não cobrem só o caminho feliz;
+testam as regras de negócio, por exemplo:
 
 - usuário não enxerga ticket de outro usuário (404) e filtros nunca ampliam a visibilidade;
 - transições de status inválidas (409), ator errado (403), resolução sem texto ou sem técnico (422);
@@ -197,8 +203,13 @@ end-to-end no navegador. Não testam só o caminho feliz; cobrem as regras de ne
 - constraints do banco rejeitam dados inválidos mesmo inseridos por SQL direto;
 - **e2e:** um chamado vai de aberto a fechado passando por usuário e técnico, com cada passo
   no histórico; outro usuário não abre o chamado pelo link; telas de admin não são alcançáveis;
-- **acessibilidade:** nove telas passam no axe (WCAG 2.1 A/AA), e o link "Pular para o conteúdo"
-  funciona pelo teclado.
+- **acessibilidade:** nove telas passam no axe (WCAG 2.1 A/AA), o link "Pular para o conteúdo"
+  funciona pelo teclado e nenhuma tela transborda num celular de 390 px;
+- **segurança:** um `X-Forwarded-For` forjado não dá tentativas extras de login (testado na
+  pilha de produção, através do Nginx).
+
+Os testes de tela já encontraram bugs reais que foram corrigidos: o retorno à página pedida
+depois do login não funcionava, e editar um chamado podia trocar a categoria sozinho.
 
 Os testes usam um banco PostgreSQL separado (`POSTGRES_TEST_DB`), criado automaticamente.
 O schema é montado **rodando as migrations**, o que também as valida, e cada teste roda em
@@ -215,7 +226,7 @@ uv run pytest --cov
 
 # frontend
 cd frontend
-npm test
+npm test                 # ou npm run test:coverage
 
 # end-to-end (API rodando em localhost:8000)
 npx playwright install chromium   # na primeira vez
