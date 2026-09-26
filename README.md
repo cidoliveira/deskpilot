@@ -86,7 +86,7 @@ tudo, então forçar uma URL ou uma requisição não burla nenhuma regra.
 - **Infra:** Docker, Docker Compose, uv (gerenciador de pacotes)
 - **Frontend:** React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, TanStack Query
 - **Testes do frontend:** Vitest + Testing Library; Playwright (e2e) + axe (acessibilidade); oxlint e Prettier
-- **CI:** GitHub Actions com 4 jobs: backend, frontend, e2e contra API e banco reais, e a pilha de produção em Docker
+- **CI:** GitHub Actions com 5 jobs: backend, frontend, e2e contra API e banco reais, a pilha de desenvolvimento (`docker compose up` como descrito abaixo) e a pilha de produção em Docker
 
 ## Como executar
 
@@ -100,6 +100,8 @@ docker compose up --build
 - API: http://localhost:8000/api/v1/health
 - Swagger (OpenAPI): http://localhost:8000/api/v1/docs
 - ReDoc: http://localhost:8000/api/v1/redoc
+
+O CI executa exatamente esses passos a cada push (job *Development stack*).
 
 Ao subir, o container da API aplica as migrations e cria o admin inicial definido em
 `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` (se ainda não existir).
