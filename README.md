@@ -41,6 +41,9 @@ O DeskPilot centraliza os chamados em um fluxo único e auditável:
 | ✅ | CI no GitHub Actions: lint, validação de migrations e testes com cobertura mínima de 90% |
 | ✅ | Interface React em PT-BR: fila do técnico, detalhe com ações por perfil, painel e administração |
 | ✅ | Dados de demonstração criados pelo fluxo real (script de seed) |
+| ✅ | Limite de tentativas de login (429 + `Retry-After`) por IP e e-mail |
+| ✅ | Acessibilidade verificada: contraste AA, navegação por teclado, axe nos testes e2e |
+| ✅ | Pilha de produção: imagens `prod`, Nginx com headers de segurança, migrations em etapa separada |
 
 ## Arquitetura
 
@@ -82,7 +85,8 @@ tudo, então forçar uma URL ou uma requisição não burla nenhuma regra.
 - **Qualidade:** Ruff (lint + format)
 - **Infra:** Docker, Docker Compose, uv (gerenciador de pacotes)
 - **Frontend:** React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, TanStack Query
-- **Testes do frontend:** Vitest + Testing Library; oxlint e Prettier
+- **Testes do frontend:** Vitest + Testing Library; Playwright (e2e) + axe (acessibilidade); oxlint e Prettier
+- **CI:** GitHub Actions com 4 jobs: backend, frontend, e2e contra API e banco reais, e a pilha de produção em Docker
 
 ## Como executar
 
@@ -107,6 +111,18 @@ cd frontend
 npm install
 npm run dev        # http://localhost:5173 (o Vite encaminha /api para localhost:8000)
 ```
+
+### Em modo produção
+
+```bash
+cp .env.example .env    # troque todos os segredos
+docker compose -f docker-compose.prod.yml up -d --build
+# http://localhost:8080
+```
+
+Nginx serve o React e encaminha `/api` para a API (mesma origem, sem CORS); as migrations
+rodam num serviço próprio antes da API subir; só o Nginx é publicado. O passo a passo para
+colocar em um servidor (HTTPS, backup, atualização) está em **[docs/deploy.md](docs/deploy.md)**.
 
 ### Dados de demonstração
 
@@ -148,6 +164,8 @@ Técnicos e administradores são criados por um admin em `POST /api/v1/users`.
 | `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` | Admin criado no startup, se ainda não existir | opcional |
 | `FIRST_ADMIN_NAME` | Nome do admin inicial | `Administrator` |
 | `DEMO_PASSWORD` | Senha das contas de demonstração (`seed_demo`) | opcional |
+| `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW_MINUTES` | Falhas de login permitidas por IP + e-mail na janela | `5` / `15` |
+| `CORS_ORIGINS` | Origens permitidas quando o frontend fica em outro domínio | vazio |
 
 O arquivo `.env` nunca é versionado; apenas `.env.example`.
 
@@ -167,8 +185,8 @@ docker compose exec api alembic check
 
 ## Testes
 
-Mais de 280 testes, com cobertura acima de 95%. Não testam só o caminho feliz; cobrem as
-regras de negócio, por exemplo:
+Cerca de 300 testes no backend (cobertura acima de 95%), 38 no frontend e 7 fluxos
+end-to-end no navegador. Não testam só o caminho feliz; cobrem as regras de negócio, por exemplo:
 
 - usuário não enxerga ticket de outro usuário (404) e filtros nunca ampliam a visibilidade;
 - transições de status inválidas (409), ator errado (403), resolução sem texto ou sem técnico (422);
@@ -176,7 +194,11 @@ regras de negócio, por exemplo:
 - toda atribuição, mudança de status e de prioridade gera evento no histórico;
 - dois técnicos assumindo o mesmo ticket ao mesmo tempo (duas transações reais);
 - a regra de SLA em SQL (filtros e dashboard) concorda com a regra em Python (respostas);
-- constraints do banco rejeitam dados inválidos mesmo inseridos por SQL direto.
+- constraints do banco rejeitam dados inválidos mesmo inseridos por SQL direto;
+- **e2e:** um chamado vai de aberto a fechado passando por usuário e técnico, com cada passo
+  no histórico; outro usuário não abre o chamado pelo link; telas de admin não são alcançáveis;
+- **acessibilidade:** nove telas passam no axe (WCAG 2.1 A/AA), e o link "Pular para o conteúdo"
+  funciona pelo teclado.
 
 Os testes usam um banco PostgreSQL separado (`POSTGRES_TEST_DB`), criado automaticamente.
 O schema é montado **rodando as migrations**, o que também as valida, e cada teste roda em
@@ -194,6 +216,10 @@ uv run pytest --cov
 # frontend
 cd frontend
 npm test
+
+# end-to-end (API rodando em localhost:8000)
+npx playwright install chromium   # na primeira vez
+npm run test:e2e
 ```
 
 ## Exemplos de uso
@@ -239,4 +265,12 @@ Todos os erros seguem o mesmo formato:
 - [x] **Etapa 6:** SLA, filtros, busca e ordenação
 - [x] **Etapa 7:** dashboard de métricas e CI (GitHub Actions)
 - [x] **Etapa 8:** frontend React
-- [ ] **Etapa 9:** deploy
+- [x] **Etapa 9:** pilha de produção (Docker + Nginx) testada no CI e guia de deploy
+
+### Próximos passos
+
+- Publicar numa VPS seguindo o [guia de deploy](docs/deploy.md)
+- Comentários internos (visíveis só para a equipe) e anexos
+- Notificações por e-mail quando o chamado muda ou o SLA entra em risco
+- SLA em horário comercial, com pausa enquanto aguarda o usuário
+- Login via SSO (Entra ID / Google Workspace)
