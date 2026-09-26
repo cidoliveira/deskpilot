@@ -1,43 +1,19 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { BarList } from "../components/BarList";
+import { SlaBacklogBar } from "../components/SlaBacklogBar";
 import { Card, ErrorBanner, PageHeader, Spinner } from "../components/ui";
 import { useDashboard } from "../hooks/queries";
 import { formatDuration } from "../lib/format";
 import { ACTIVE_STATUSES, PRIORITIES, PRIORITY_LABEL, STATUSES, STATUS_LABEL } from "../lib/labels";
 
-interface HeadlineProps {
-  label: string;
-  value: string;
-  caption: string;
-  /** SLA signal: always paired with the label text, never the only cue. */
-  signal?: "breach" | "risk" | "ok";
-  href?: string;
-}
-
-const SIGNAL = { breach: "bg-sla-breach", risk: "bg-sla-risk", ok: "bg-sla-ok" };
-
-function Headline({ label, value, caption, signal, href }: HeadlineProps) {
-  const body = (
-    <>
-      <p className="label-caps flex items-center gap-2">
-        {signal && <span aria-hidden="true" className={`size-2 rounded-sm ${SIGNAL[signal]}`} />}
-        {label}
-      </p>
-      <p className="mt-2 font-display text-4xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-1 text-xs text-ink-soft">{caption}</p>
-    </>
-  );
+function Fact({ label, value, caption }: { label: string; value: string; caption: string }) {
   return (
-    <Card className="p-5">
-      {href ? (
-        <Link to={href} className="block rounded focus-visible:outline-offset-8">
-          {body}
-        </Link>
-      ) : (
-        body
-      )}
-    </Card>
+    <div>
+      <p className="label-caps">{label}</p>
+      <p className="mt-1 font-display text-3xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-0.5 text-xs text-ink-soft">{caption}</p>
+    </div>
   );
 }
 
@@ -64,38 +40,75 @@ export function DashboardPage() {
       ? "—"
       : formatDuration(data.avg_resolution_hours * 3_600_000);
   const queue = (params: string) => `/queue?view=all&${params}`;
+  const activeStatuses = ACTIVE_STATUSES.join(",");
+  const backlog = ACTIVE_STATUSES.reduce((sum, status) => sum + data.by_status[status], 0);
 
   return (
     <>
       <PageHeader eyebrow="Visão geral" title="Painel do service desk" />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Headline
-          label="Fora do prazo agora"
-          value={String(sla.breached_open)}
-          caption="Chamados abertos com SLA vencido"
-          signal="breach"
-          href={queue(`sla_status=BREACHED&status=${ACTIVE_STATUSES.join(",")}`)}
-        />
-        <Headline
-          label="Em risco"
-          value={String(sla.at_risk)}
-          caption="Com 80% ou mais do prazo consumido"
-          signal="risk"
-          href={queue("sla_status=AT_RISK")}
-        />
-        <Headline
-          label="Cumprimento do SLA"
-          value={compliance}
-          caption={`${sla.met} de ${resolved} resolvidos dentro do prazo`}
-          signal="ok"
-        />
-        <Headline
-          label="Tempo médio de resolução"
-          value={avg}
-          caption={`${data.total} chamados no total`}
-        />
-      </div>
+      {sla.breached_open > 0 && (
+        <Link
+          to={queue(`sla_status=BREACHED&status=${activeStatuses}`)}
+          className="mb-4 flex items-center justify-between gap-4 rounded-lg border border-l-4 border-sla-breach/30 border-l-sla-breach bg-surface px-5 py-3 text-sm hover:bg-sla-breach/5"
+        >
+          <span>
+            <strong className="font-semibold">
+              {sla.breached_open === 1
+                ? "1 chamado em aberto já passou do prazo."
+                : `${sla.breached_open} chamados em aberto já passaram do prazo.`}
+            </strong>{" "}
+            <span className="text-ink-soft">Priorize-os na fila.</span>
+          </span>
+          <span className="font-medium whitespace-nowrap text-sla-breach">Ver chamados →</span>
+        </Link>
+      )}
+
+      <Card className="grid gap-6 p-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-10">
+        <div>
+          <h2 className="label-caps">Situação do SLA · chamados em aberto</h2>
+          <p className="mt-1 mb-4 font-display text-3xl font-semibold tracking-tight">
+            {backlog}{" "}
+            <span className="font-sans text-sm font-normal text-ink-soft">
+              {backlog === 1 ? "chamado aguardando solução" : "chamados aguardando solução"}
+            </span>
+          </p>
+          <SlaBacklogBar
+            segments={[
+              {
+                key: "ON_TRACK",
+                label: "No prazo",
+                count: Math.max(backlog - sla.at_risk - sla.breached_open, 0),
+                href: queue(`sla_status=ON_TRACK&status=${activeStatuses}`),
+              },
+              {
+                key: "AT_RISK",
+                label: "Em risco",
+                count: sla.at_risk,
+                href: queue(`sla_status=AT_RISK&status=${activeStatuses}`),
+              },
+              {
+                key: "BREACHED",
+                label: "Fora do prazo",
+                count: sla.breached_open,
+                href: queue(`sla_status=BREACHED&status=${activeStatuses}`),
+              },
+            ]}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-6 border-t border-line pt-5 lg:grid-cols-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10">
+          <Fact
+            label="Cumprimento do SLA"
+            value={compliance}
+            caption={`${sla.met} de ${resolved} resolvidos dentro do prazo`}
+          />
+          <Fact
+            label="Tempo médio de resolução"
+            value={avg}
+            caption={`sobre ${resolved} chamados resolvidos`}
+          />
+        </div>
+      </Card>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Panel title="Chamados por status">
