@@ -75,6 +75,20 @@ deskpilot.suaempresa.com.br {
 
 Alternativas: Cloudflare Tunnel (sem abrir portas) ou Traefik como mais um serviço do Compose.
 
+**IP real do cliente atrás do proxy.** O Nginx do projeto **sobrescreve** o `X-Forwarded-For`
+com o endereço de quem se conectou a ele (e a API só confia nesse header vindo do Nginx), para
+que ninguém forje um IP e escape do limite de tentativas de login. Com um proxy de TLS na frente,
+"quem se conectou" passa a ser o proxy, e todos os usuários parecem vir do mesmo IP. Para
+recuperar o IP real, diga ao Nginx em quem confiar, no início de `conf.d/default.conf`:
+
+```nginx
+set_real_ip_from 172.17.0.1;      # endereço do proxy de TLS (ajuste ao seu ambiente)
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+```
+
+Nunca use `set_real_ip_from 0.0.0.0/0`: isso volta a aceitar IP forjado por qualquer um.
+
 ### 5. Atualizar
 
 ```bash
