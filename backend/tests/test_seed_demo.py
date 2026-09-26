@@ -1,4 +1,5 @@
 from collections import Counter
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -39,3 +40,13 @@ def test_seed_is_idempotent(db_session: Session) -> None:
     seed(db_session, "Str0ng-password")
 
     assert db_session.scalar(select(func.count()).select_from(Ticket)) == len(DEMO_TICKETS)
+
+
+def test_last_update_matches_the_last_activity(db_session: Session) -> None:
+    seed(db_session, "Str0ng-password")
+
+    # Every demo ticket was created at least 1 h "ago": its last activity is in the past,
+    # not the moment the seed ran.
+    ten_minutes_ago = datetime.now(UTC) - timedelta(minutes=10)
+    for ticket in db_session.scalars(select(Ticket)):
+        assert ticket.created_at <= ticket.updated_at <= ten_minutes_ago

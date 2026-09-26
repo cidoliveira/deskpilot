@@ -220,6 +220,8 @@ def _backdate(session: Session, ticket: Ticket, hours_ago: float) -> None:
         row.created_at = ticket.created_at + span * (index / max(len(rows) - 1, 1))
     if ticket.closed_at is not None and rows:
         rows[-1].created_at = ticket.closed_at
+    # Last activity; set explicitly because the ORM would stamp "now" on this update.
+    ticket.updated_at = rows[-1].created_at if rows else ticket.created_at
 
 
 def seed(session: Session, password: str) -> None:
