@@ -258,6 +258,45 @@ Prefixo `/api/v1`. Documentação interativa em `/api/v1/docs`.
   com o `FIRST_ADMIN_EMAIL`, o script registra um erro e não cria admin. No container, o script
   roda antes da API aceitar requisições, então isso não acontece no primeiro deploy.
 
+### Frontend
+
+| Decisão | Escolha | Motivo |
+|---|---|---|
+| Regras no cliente | Nenhuma: os botões vêm de `allowed_actions` | Uma única fonte de verdade (a política do backend) |
+| Estado do servidor | TanStack Query, chaves centralizadas em `hooks/queries.ts` | Cache, loading e invalidação sem Redux |
+| Sessão | Só o token é guardado; o usuário vem de `/auth/me` | Mesmo princípio do backend: role sempre atual |
+| 401 autenticado | Desloga e limpa o cache | Nenhum dado da sessão anterior sobra na tela |
+| Filtros | Na URL (`useListParams`), valores desconhecidos descartados | Links compartilháveis; URL editada não quebra a tela |
+| Mensagens | Códigos de erro da API → PT-BR (`lib/errors.ts`) | O código é o contrato; o texto em inglês é só fallback |
+| Erros de renderização | `errorElement` nas rotas | Tela de recuperação em vez de página em branco |
+| Acessibilidade | Contraste AA, labels, skip link, `role="meter"` no SLA; axe no e2e | Verificado automaticamente, não só "no olho" |
+| Telas de admin | Rotas lazy (chunks separados) | Usuários e técnicos não baixam esse código |
+
+**Identidade visual.** Família IBM Plex (Condensed para títulos e rótulos de "painel", Mono
+para códigos, horários e prazos). Um único acento (teal) para ações; vermelho, âmbar e verde
+são **reservados para o SLA**, então cor sempre significa "tempo importa aqui". A peça
+característica é o **medidor de SLA**: uma barra fina com quanto do prazo já foi consumido,
+presente em cada linha da fila e, maior e com contagem regressiva, no detalhe do chamado.
+Texto e marcas têm tons separados: as barras usam as cores vivas (3:1 bastam para gráficos) e
+o texto usa versões escuras das mesmas cores (≥ 4,5:1).
+
+### Produção
+
+- `backend/Dockerfile` tem dois alvos: `dev` (todas as dependências, migrations no startup) e
+  `prod` (só dependências de runtime, 2 workers do uvicorn atrás do proxy).
+- `frontend/Dockerfile` gera o build com Node e serve com Nginx, que também faz proxy de
+  `/api` para a API: frontend e API na **mesma origem**, sem CORS. Cache de um ano para os
+  arquivos com hash, `no-cache` para o `index.html`, gzip e headers de segurança (CSP,
+  `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`). A CSP estrita não é
+  aplicada em `/api/` porque o Swagger UI carrega scripts próprios.
+- `docker-compose.prod.yml`: `db` → `migrate` (roda uma vez) → `api` → `web`. A API só sobe se
+  as migrations passarem; só o Nginx é publicado.
+- **Limite de tentativas de login:** janela deslizante por (IP, e-mail); depois de 5 falhas em
+  15 minutos, `429` com `Retry-After`. Por IP **e** e-mail para não permitir que um estranho
+  bloqueie a conta de alguém a partir de outro lugar.
+- O job *Production stack* do CI sobe essa pilha com o `.env.example` e faz um smoke test
+  através do Nginx. Guia passo a passo em [deploy.md](deploy.md).
+
 ## 6. Portfólio × produção
 
 | Tema | [P] Aqui | [PROD] Em uma empresa |
@@ -269,9 +308,13 @@ Prefixo `/api/v1`. Documentação interativa em `/api/v1/docs`.
 | Paginação | offset/limit | keyset em grandes volumes |
 | Prioridade | Escolhida pelo usuário | Matriz impacto × urgência |
 | Fechamento | Manual | Auto-close agendado + pesquisa de satisfação |
-| Migrations | Rodam no startup do container | Passo separado no pipeline de deploy |
-| Imagem Docker | Única, com dependências de dev e reload | Multi-stage, sem dev deps, sem bind mount |
-| Observabilidade | logging padrão | Logs estruturados, métricas, tracing, rate limit |
+| Migrations | Em dev, no startup; em prod, serviço `migrate` separado (feito) | Etapa do pipeline de deploy, com aprovação |
+| Imagem Docker | Alvos `dev` e `prod` (feito); rede interna, só Nginx publicado | + imagem assinada, scan de vulnerabilidades, registry privado |
+| Observabilidade | logging padrão, healthchecks | Logs estruturados (JSON), métricas, tracing, alertas |
+| Limite de login | Memória do processo (reinicia com a API, não é compartilhado entre workers) | Redis compartilhado ou rate limit no gateway/WAF |
+| Tipos do frontend | Escritos à mão espelhando os schemas | Gerados do OpenAPI (ex.: `openapi-typescript`) |
+| Validação das respostas | Confia no contrato (API do mesmo projeto, coberta por testes) | Validação na borda (Zod) se a API for de outro time |
+| TLS | Fora do projeto (Caddy/Cloudflare na frente) | Terminação no load balancer, HSTS |
 | E-mail único | Normalizado em minúsculas + UNIQUE | `citext` ou índice único em `lower(email)` |
 | Admin inicial | Criado no startup a partir do `.env` | Provisionado pelo IdP / processo de onboarding |
 | Senha | Tamanho mínimo | + verificação contra senhas vazadas (ex.: HIBP), MFA |
