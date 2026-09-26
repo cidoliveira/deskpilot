@@ -134,3 +134,12 @@ def test_category_name_cannot_be_null(client: TestClient, db_session: Session, a
     )
 
     assert response.status_code == 422
+
+
+def test_default_categories_are_described_in_portuguese(client: TestClient, user: User) -> None:
+    categories = {
+        c["name"]: c["description"]
+        for c in client.get(CATEGORIES_URL, headers=auth_headers(user)).json()
+    }
+
+    assert categories["Network"] == "Internet, Wi-Fi, VPN e problemas de conexão"
