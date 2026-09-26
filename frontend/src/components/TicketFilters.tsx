@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useCategories } from "../hooks/queries";
 import type { ListFilters, useListParams } from "../hooks/useListParams";
 import {
+  ACTIVE_STATUSES,
   PRIORITIES,
   PRIORITY_LABEL,
   SLA_LABEL,
@@ -66,6 +67,7 @@ export function TicketFilters({
           onChange={(event) => setFilter("status", event.target.value)}
         >
           <option value="">Todos</option>
+          <option value={ACTIVE_STATUSES.join(",")}>Em aberto (todos os ativos)</option>
           {STATUSES.map((status) => (
             <option key={status} value={status}>
               {STATUS_LABEL[status]}

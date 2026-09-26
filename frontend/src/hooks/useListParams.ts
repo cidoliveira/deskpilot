@@ -60,7 +60,8 @@ export function useListParams(defaultSort = "-created_at") {
     page: filters.page,
     page_size: 15,
     q: filters.q || undefined,
-    status: filters.status ? [filters.status as TicketStatus] : undefined,
+    // Comma-separated, so one URL value can mean "any active status".
+    status: filters.status ? (filters.status.split(",") as TicketStatus[]) : undefined,
     priority: filters.priority ? [filters.priority as TicketPriority] : undefined,
     category_id: filters.category_id ? Number(filters.category_id) : undefined,
     sla_status: filters.sla_status || undefined,

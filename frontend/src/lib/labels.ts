@@ -42,3 +42,6 @@ export const TRANSITION_LABEL: Record<TicketStatus, string> = {
 export const STATUSES = Object.keys(STATUS_LABEL) as TicketStatus[];
 export const PRIORITIES = Object.keys(PRIORITY_LABEL) as TicketPriority[];
 export const SLA_STATUSES = Object.keys(SLA_LABEL) as SlaStatus[];
+
+/** Statuses where someone still has work to do (the "open backlog"). */
+export const ACTIVE_STATUSES: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_USER"];

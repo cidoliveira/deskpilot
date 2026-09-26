@@ -2,6 +2,7 @@ import { useAuth } from "../auth/useAuth";
 import { TicketListView } from "../components/TicketListView";
 import { PageHeader } from "../components/ui";
 import { useListParams } from "../hooks/useListParams";
+import { ACTIVE_STATUSES } from "../lib/labels";
 import type { TicketListParams } from "../services/api";
 
 interface QueueView {
@@ -12,13 +13,11 @@ interface QueueView {
   adminOnly?: boolean;
 }
 
-const ACTIVE: TicketListParams["status"] = ["OPEN", "IN_PROGRESS", "WAITING_USER"];
-
 const VIEWS: QueueView[] = [
   {
     id: "mine",
     label: "Comigo",
-    preset: { assignee: "me", status: ACTIVE },
+    preset: { assignee: "me", status: ACTIVE_STATUSES },
     empty: { title: "Nada pendente com você", hint: "Assuma um chamado na aba Disponíveis." },
   },
   {
