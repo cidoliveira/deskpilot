@@ -64,6 +64,15 @@ export function TicketDetailPage() {
             <PriorityBadge priority={ticket.priority} />
             <span className="text-sm text-ink-soft">{ticket.category.name}</span>
           </div>
+          {/* Narrow screens: the deadline must be visible before scrolling to the side panel. */}
+          <div className="mt-4 xl:hidden">
+            <SlaGauge
+              status={ticket.sla_status}
+              createdAt={ticket.created_at}
+              dueAt={ticket.sla_due_at}
+              resolvedAt={ticket.resolved_at}
+            />
+          </div>
         </header>
 
         <Card className="p-5">
