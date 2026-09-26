@@ -174,3 +174,47 @@ jobs:
             frontend/test-results
             api.log
           retention-days: 7
+
+  production-stack:
+    name: Production stack (Docker images + Nginx smoke test)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and start with the example configuration
+        run: |
+          cp .env.example .env
+          docker compose -f docker-compose.prod.yml up -d --build
+
+      - name: Wait for the API behind Nginx
+        run: timeout 120 bash -c 'until curl -sf localhost:8080/api/v1/health; do sleep 2; done'
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          # The React app is served, and unknown paths fall back to it (SPA routing).
+          curl -sf localhost:8080/ | grep -q '<div id="root">'
+          curl -sf localhost:8080/tickets/123 | grep -q '<div id="root">'
+          # Security headers on the app.
+          headers=$(curl -sI localhost:8080/)
+          echo "$headers" | grep -qi '^content-security-policy:'
+          echo "$headers" | grep -qi '^x-content-type-options: nosniff'
+          echo "$headers" | grep -qi '^x-frame-options: DENY'
+          # Migrations ran and the first admin can log in through the proxy.
+          token=$(curl -sf -X POST localhost:8080/api/v1/auth/login \
+            -d "username=admin@deskpilot.dev&password=change-me-admin" | jq -r .access_token)
+          curl -sf localhost:8080/api/v1/auth/me -H "Authorization: Bearer $token" | jq -e '.role == "ADMIN"'
+          # The seven default categories come from the data migration.
+          curl -sf localhost:8080/api/v1/categories -H "Authorization: Bearer $token" | jq -e 'length == 7'
+          # The API and the database are not published outside the Compose network.
+          ! curl -s --max-time 2 localhost:8000/api/v1/health
+          ! (echo > /dev/tcp/localhost/5432) 2>/dev/null
+
+      - name: Show logs when something fails
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml logs --no-color
+
+      - name: Stop
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v
