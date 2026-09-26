@@ -1,0 +1,62 @@
+# Production-like stack: docker compose -f docker-compose.prod.yml up -d --build
+#
+#   web (Nginx: React build + /api proxy)  ->  api (FastAPI, 2 workers)  ->  db
+#
+# Differences from the development docker-compose.yml:
+# - images without dev dependencies, no source bind mounts, no auto-reload
+# - migrations run once in the `migrate` service; the API starts only if they succeed
+# - only the web server is published; the API and the database stay inside the network
+name: deskpilot-prod
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: prod
+  env_file: .env
+  environment:
+    ENVIRONMENT: production
+    POSTGRES_HOST: db
+    POSTGRES_PORT: 5432
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-deskpilot}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    <<: *backend
+    command: sh -c "alembic upgrade head && python -m app.scripts.create_admin"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
