@@ -6,6 +6,7 @@
 # - images without dev dependencies, no source bind mounts, no auto-reload
 # - migrations run once in the `migrate` service; the API starts only if they succeed
 # - only the web server is published; the API and the database stay inside the network
+# - the API trusts X-Forwarded-For only from Nginx's fixed address on the internal network
 name: deskpilot-prod
 
 x-backend: &backend
@@ -17,6 +18,8 @@ x-backend: &backend
     ENVIRONMENT: production
     POSTGRES_HOST: db
     POSTGRES_PORT: 5432
+    FORWARDED_ALLOW_IPS: 172.28.0.10 # the web (Nginx) container, see networks below
+  networks: [internal]
 
 services:
   db:
@@ -33,6 +36,7 @@ services:
       timeout: 3s
       retries: 10
     restart: unless-stopped
+    networks: [internal]
 
   migrate:
     <<: *backend
@@ -53,10 +57,19 @@ services:
     build: ./frontend
     ports:
       - "${WEB_PORT:-8080}:80"
+    networks:
+      internal:
+        ipv4_address: 172.28.0.10
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
 
 volumes:
   pgdata:

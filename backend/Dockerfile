@@ -42,7 +42,9 @@ COPY app ./app
 USER app
 # Migrations run as a separate one-off step before the API starts (see
 # docker-compose.prod.yml), so several API replicas never race to migrate.
-# --forwarded-allow-ips trusts X-Forwarded-For from Nginx: the API port is only
-# reachable inside the Compose network, never published directly.
+# X-Forwarded-For is trusted only from the addresses in FORWARDED_ALLOW_IPS (read by
+# uvicorn). The safe default trusts nobody but localhost; docker-compose.prod.yml sets
+# it to the Nginx container's fixed address on the internal network.
+ENV FORWARDED_ALLOW_IPS=127.0.0.1
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", \
-     "--workers", "2", "--proxy-headers", "--forwarded-allow-ips", "*"]
+     "--workers", "2", "--proxy-headers"]
