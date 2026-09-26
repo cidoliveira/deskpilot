@@ -8,7 +8,7 @@ const VARIANT: Record<Variant, string> = {
   primary: "bg-accent text-white hover:bg-accent-strong disabled:bg-accent/50",
   secondary: "border border-line bg-surface text-ink hover:border-ink/30 disabled:text-ink-faint",
   ghost: "text-ink-soft hover:bg-ink/5 hover:text-ink",
-  danger: "border border-sla-breach/40 bg-surface text-sla-breach hover:bg-sla-breach/5",
+  danger: "border border-sla-breach/40 bg-surface text-sla-breach-text hover:bg-sla-breach/5",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -74,7 +74,7 @@ export function ErrorBanner({ error }: { error: unknown }) {
   return (
     <div
       role="alert"
-      className="rounded-md border border-sla-breach/30 bg-sla-breach/5 px-3.5 py-2.5 text-sm text-sla-breach"
+      className="rounded-md border border-sla-breach/30 bg-sla-breach/5 px-3.5 py-2.5 text-sm text-sla-breach-text"
     >
       {message}
     </div>

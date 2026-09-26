@@ -30,7 +30,7 @@ function FieldShell({ label, error, hint, children }: FieldShellProps) {
         invalid: Boolean(error),
       })}
       {(error || hint) && (
-        <p id={messageId} className={`text-xs ${error ? "text-sla-breach" : "text-ink-soft"}`}>
+        <p id={messageId} className={`text-xs ${error ? "text-sla-breach-text" : "text-ink-soft"}`}>
           {error ?? hint}
         </p>
       )}

@@ -60,7 +60,7 @@ export function DashboardPage() {
             </strong>{" "}
             <span className="text-ink-soft">Priorize-os na fila.</span>
           </span>
-          <span className="font-medium whitespace-nowrap text-sla-breach">Ver chamados →</span>
+          <span className="font-medium whitespace-nowrap text-sla-breach-text">Ver chamados →</span>
         </Link>
       )}
 

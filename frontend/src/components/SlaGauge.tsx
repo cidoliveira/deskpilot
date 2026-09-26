@@ -3,9 +3,9 @@ import { SLA_LABEL } from "../lib/labels";
 import type { SlaStatus } from "../types/api";
 
 const TONE: Record<SlaStatus, { bar: string; text: string }> = {
-  ON_TRACK: { bar: "bg-sla-ok", text: "text-sla-ok" },
-  AT_RISK: { bar: "bg-sla-risk", text: "text-[#9a6d00]" },
-  BREACHED: { bar: "bg-sla-breach", text: "text-sla-breach" },
+  ON_TRACK: { bar: "bg-sla-ok", text: "text-sla-ok-text" },
+  AT_RISK: { bar: "bg-sla-risk", text: "text-sla-risk-text" },
+  BREACHED: { bar: "bg-sla-breach", text: "text-sla-breach-text" },
   MET: { bar: "bg-sla-met", text: "text-ink-soft" },
 };
 

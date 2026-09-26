@@ -3,7 +3,8 @@
 /*
  * DeskPilot design tokens.
  * One accent (teal) for actions. Red / amber / green are reserved for SLA signals,
- * so a colored element always means "time matters here".
+ * so a colored element always means "time matters here". Every text color meets
+ * WCAG AA contrast (checked by the axe e2e test).
  */
 @theme {
   --color-mist: #eef2f6; /* app background */
@@ -11,18 +12,24 @@
   --color-line: #d9e0e8;
   --color-ink: #14213d; /* text, sidebar */
   --color-ink-soft: #52607a;
-  --color-ink-faint: #8a96a8;
+  --color-ink-faint: #5e6a7c; /* still >= 4.5:1 on mist: small labels must stay readable */
   --color-deck: #14213d; /* sidebar */
   --color-deck-hover: #1d2d52;
 
-  --color-accent: #0e7c86;
-  --color-accent-strong: #0a5f67;
+  --color-accent: #0b6e77;
+  --color-accent-strong: #08575e;
   --color-accent-soft: #e2f3f4;
 
   --color-sla-ok: #2e8b57;
   --color-sla-risk: #d99a00;
   --color-sla-breach: #d1453b;
   --color-sla-met: #6b7a90;
+
+  /* Signal colors for TEXT: darker twins of the marks above, >= 4.5:1 on white and mist.
+     Bars and dots keep the brighter tones (they only need 3:1 as graphics). */
+  --color-sla-ok-text: #23744a;
+  --color-sla-risk-text: #7f5a00;
+  --color-sla-breach-text: #b3342b;
 
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
