@@ -78,20 +78,27 @@ function UserRow({ user, isSelf }: { user: User; isSelf: boolean }) {
   });
 
   return (
-    <tr className={user.is_active ? undefined : "text-ink-faint"}>
-      <td className="px-5 py-3">
+    // A list, not a table: on phones the controls wrap under the name instead of
+    // pushing the page sideways.
+    <li
+      className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 ${
+        user.is_active ? "" : "text-ink-faint"
+      }`}
+    >
+      <div className="min-w-48 flex-1">
         <p className="font-medium">
           {user.name}
           {isSelf && <span className="ml-2 text-xs font-normal text-ink-soft">(você)</span>}
+          {!user.is_active && <span className="ml-2 text-xs font-normal">desativado</span>}
         </p>
-        <p className="text-xs text-ink-soft">{user.email}</p>
+        <p className="truncate text-xs text-ink-soft">{user.email}</p>
         {update.error && (
           <div className="mt-2">
             <ErrorBanner error={update.error} />
           </div>
         )}
-      </td>
-      <td className="px-3 py-3">
+      </div>
+      <div className="flex items-center gap-3">
         <label className="sr-only" htmlFor={`role-${user.id}`}>
           Perfil de {user.name}
         </label>
@@ -100,7 +107,7 @@ function UserRow({ user, isSelf }: { user: User; isSelf: boolean }) {
           value={user.role}
           disabled={isSelf || update.isPending}
           onChange={(event) => update.mutate({ role: event.target.value as UserRole })}
-          className="rounded-md border border-line bg-surface px-2 py-1 text-sm disabled:opacity-60"
+          className="rounded-md border border-line bg-surface px-2 py-1.5 text-sm disabled:opacity-60"
         >
           {ROLES.map((role) => (
             <option key={role} value={role}>
@@ -108,18 +115,17 @@ function UserRow({ user, isSelf }: { user: User; isSelf: boolean }) {
             </option>
           ))}
         </select>
-      </td>
-      <td className="px-5 py-3 text-right">
         <Button
           variant={user.is_active ? "secondary" : "primary"}
           disabled={isSelf}
           busy={update.isPending}
           onClick={() => update.mutate({ is_active: !user.is_active })}
+          className="min-w-28"
         >
           {user.is_active ? "Desativar" : "Reativar"}
         </Button>
-      </td>
-    </tr>
+      </div>
+    </li>
   );
 }
 
@@ -163,26 +169,11 @@ export function UsersPanel() {
       <ErrorBanner error={users.error} />
       {users.data && (
         <>
-          <table className="w-full text-sm">
-            <thead className="border-b border-line text-left">
-              <tr>
-                <th scope="col" className="label-caps px-5 py-3 font-semibold">
-                  Usuário
-                </th>
-                <th scope="col" className="label-caps px-3 py-3 font-semibold">
-                  Perfil
-                </th>
-                <th scope="col" className="px-5 py-3">
-                  <span className="sr-only">Ações</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {users.data.items.map((user) => (
-                <UserRow key={user.id} user={user} isSelf={user.id === currentUser?.id} />
-              ))}
-            </tbody>
-          </table>
+          <ul aria-label="Usuários" className="divide-y divide-line text-sm">
+            {users.data.items.map((user) => (
+              <UserRow key={user.id} user={user} isSelf={user.id === currentUser?.id} />
+            ))}
+          </ul>
           <Pagination
             page={users.data.page}
             pages={users.data.pages}
