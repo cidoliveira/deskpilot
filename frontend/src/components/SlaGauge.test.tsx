@@ -25,6 +25,20 @@ describe("SlaGauge", () => {
     expect(screen.getByText("Vencido há 2 h")).toBeInTheDocument();
   });
 
+  it("says how late a ticket was resolved, not that it is still overdue", () => {
+    render(
+      <SlaGauge
+        status="BREACHED"
+        createdAt={hoursAgo(30)}
+        dueAt={hoursAgo(22)}
+        resolvedAt={hoursAgo(19)}
+      />,
+    );
+
+    expect(screen.getByText("Resolvido com 3 h de atraso")).toBeInTheDocument();
+    expect(screen.queryByText(/Vencido/)).not.toBeInTheDocument();
+  });
+
   it("says when a ticket was resolved on time", () => {
     render(
       <SlaGauge
